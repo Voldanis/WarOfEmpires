@@ -5,11 +5,29 @@ from boss import Boss
 from bot import Bot
 
 
-class State:
+class Server:
     def __init__(self, width, height):
         self.map_graph = generate_map(width, height)
         self.p1_villages = {'v8'}
         self.p2_villages = {'v3'}
+        self.p1_score = 1
+        self.p2_score = 1
+
+    def run(self, p1, p2):
+        while self.p1_score < 90 and self.p2_score < 90:
+            self.process_day_change()
+            self.process_player(p1)
+            self.process_player(p2)
+        if self.p1_score >= 90:
+            if type(p1) == Bot:
+                print('player wins!')
+            else:
+                print('boss wins!')
+        else:
+            if type(p2) == Bot:
+                print('player wins!')
+            else:
+                print('boss wins!')
 
     def process_request(self, player_num, request):
         if player_num == 1:
@@ -24,8 +42,12 @@ class State:
         elif type(request) == tuple and request[0] == 'upgrade':
             if request[1] in self.map_graph.keys():
                 if request[1] in p_villages:
-                    if self.map_graph[request[1]].coins >= self.map_graph[request[1]].level * 2 + 2:
-                        self.upgrade_village(request[1])
+                    if self.map_graph[request[1]].coins >= self.map_graph[request[1]].level * 3 + 3:
+                        self.map_graph[request[1]].upgrade()
+                        if player_num == 1:
+                            self.p1_score += 1
+                        else:
+                            self.p2_score += 1
                         return {'status_kode': 10}
                     else:
                         return {'status_kode': 13}
@@ -41,7 +63,7 @@ class State:
             if self.map_graph['v' + str(i)].empire:
                 self.map_graph['v' + str(i)].coins += 1 + self.map_graph['v' + str(i)].level
         print(self.process_request(2, 'report'))
-        time.sleep(1)
+        time.sleep(0.01)
 
     def process_player(self, player):
         request = 'report'
@@ -49,11 +71,9 @@ class State:
             response = self.process_request(player.number, request)
             request = player.move(response)
             print(request)
-            time.sleep(1)
+            time.sleep(0.01)
 
-    def upgrade_village(self, village):
-        self.map_graph[village].coins -= (self.map_graph[village].level * 2 + 2)
-        self.map_graph[village].level += 1
+
 
     def report(self, p_villages, enemy_villages):
         p_villages_data = dict()
@@ -75,6 +95,10 @@ class Village:
         self.coins = 0
         self.empire = None
         #self.units = []
+
+    def upgrade(self):
+        self.coins -= (self.level * 3 + 3)
+        self.level += 1
 
     def __str__(self):
         return self.r_road, self.d_road, self.l_road, self.r_road
@@ -132,12 +156,12 @@ def generate_map(width: int, height: int):
 random.seed(a=835995859)
 width = 4
 height = 3
-state = State(width, height)
+server = Server(width, height)
 
 roads = dict()
-for i in state.map_graph.keys():
+for i in server.map_graph.keys():
     if i[0] == 'r':
-        roads[i] = state.map_graph[i].length
+        roads[i] = server.map_graph[i].length
 player1 = Boss(roads, 1)
 player2 = Bot(roads, 2)
 if random.randint(0, 1) == 1:
@@ -145,11 +169,7 @@ if random.randint(0, 1) == 1:
     player1.number = 1
     player2.number = 2
 
-
-while True:
-    state.process_day_change()
-    state.process_player(player1)
-    state.process_player(player2)
+server.run(player1, player2)
 
 
 
