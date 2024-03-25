@@ -4,28 +4,65 @@ import time
 from boss import Boss
 from bot import Bot
 
+
 class State:
     def __init__(self, width, height):
         self.map_graph = generate_map(width, height)
-        '''self.p1_villages = {'v8'}
-        self.p2_villages = {'v3'}'''
+        self.p1_villages = {'v8'}
+        self.p2_villages = {'v3'}
 
-    def output(self, player):
-        p_villages = []
-        enemy_villages = []
-        if player == 1:
-            p = 'p1'
-            enemy = 'p2'
+    def process_request(self, player_num, request):
+        if player_num == 1:
+            p_villages = self.p1_villages
+            enemy_villages = self.p2_villages
         else:
-            p = 'p2'
-            enemy = 'p1'
-        for i in self.map_graph.keys():
-            if i[0] == 'v':
-                if self.map_graph[i].empire == p:
-                    p_villages.append([i, self.map_graph[i].level, self.map_graph[i].coins])
-                elif self.map_graph[i].empire == enemy:
-                    enemy_villages.append([i, self.map_graph[i].level])
-        return p_villages, enemy_villages
+            p_villages = self.p2_villages
+            enemy_villages = self.p1_villages
+
+        if request == 'report':
+            return self.report(p_villages, enemy_villages)
+        elif type(request) == tuple and request[0] == 'upgrade':
+            if request[1] in self.map_graph.keys():
+                if request[1] in p_villages:
+                    if self.map_graph[request[1]].coins >= self.map_graph[request[1]].level * 2 + 2:
+                        self.upgrade_village(request[1])
+                        return {'status_kode': 10}
+                    else:
+                        return {'status_kode': 13}
+                else:
+                    return {'status_kode': 12}
+            else:
+                return {'status_kode': 11}
+        else:
+            return {'status_kode': 0}
+
+    def process_day_change(self):
+        for i in range(12):
+            if self.map_graph['v' + str(i)].empire:
+                self.map_graph['v' + str(i)].coins += 1 + self.map_graph['v' + str(i)].level
+        print(self.process_request(2, 'report'))
+        time.sleep(1)
+
+    def process_player(self, player):
+        request = 'report'
+        while request != 'end':
+            response = self.process_request(player.number, request)
+            request = player.move(response)
+            print(request)
+            time.sleep(1)
+
+    def upgrade_village(self, village):
+        self.map_graph[village].coins -= (self.map_graph[village].level * 2 + 2)
+        self.map_graph[village].level += 1
+
+    def report(self, p_villages, enemy_villages):
+        p_villages_data = dict()
+        enemy_villages_data = dict()
+        for i in p_villages:
+            p_villages_data[i] = {'level': self.map_graph[i].level, 'coins': self.map_graph[i].coins}
+        for i in enemy_villages:
+            enemy_villages_data[i] = {'level': self.map_graph[i].level}
+        return {'status_kode': 1, 'p_villages': p_villages_data, 'enemy_villages': enemy_villages_data}
 
 
 class Village:
@@ -96,29 +133,26 @@ random.seed(a=835995859)
 width = 4
 height = 3
 state = State(width, height)
-player1 = Boss()
-player2 = Bot()
+
+roads = dict()
+for i in state.map_graph.keys():
+    if i[0] == 'r':
+        roads[i] = state.map_graph[i].length
+player1 = Boss(roads, 1)
+player2 = Bot(roads, 2)
 if random.randint(0, 1) == 1:
     player1, player2 = player2, player1
+    player1.number = 1
+    player2.number = 2
 
 
 while True:
-    for i in range(12):
-        if state.map_graph['v' + str(i)].empire:
-            state.map_graph['v' + str(i)].coins += 1 + state.map_graph['v' + str(i)].level
-    print(state.output(2))
-    time.sleep(1)
+    state.process_day_change()
+    state.process_player(player1)
+    state.process_player(player2)
 
-    p1_ans = None
-    while p1_ans != 'end':
-        p1_ans = player1.move()
-        print(p1_ans)
-        time.sleep(1)
-    p2_ans = None
-    while p2_ans != 'end':
-        p2_ans = player2.move()
-        print(p2_ans)
-        time.sleep(1)
+
+
 
 
 
