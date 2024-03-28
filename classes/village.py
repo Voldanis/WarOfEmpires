@@ -7,19 +7,19 @@ class Village:
     names = ['greed', 'edgar', 'qina', 'tina', 'tu', 'fred', 'qila', 'twez', 'sas', 'hu', 'jif', 'olga', 'efgri', 'grif', 'geed', 'nutti', 'qn', 'astrid', 'qia', 'fraid', 'fafi', 'qsvi', 'q', 'jap', 'hugh', 'qtx', 'zes', 'dog', 'zeus', 'svagrik', 'efra', 'efgrid', 'graf', 'elgrad', 'okjewu', 'efrida', 'alah', 'faid', 'fafid', 'hron', 'svag', 'fagr', 'ew', 'hill', 'wez', 'zag', 'stu', 'sasla', 'feid', 'olha', 'zags']
     used_names = []
 
-    def __init__(self, vname, u_road, d_road, l_road, r_road):
-        self.vname = vname
-        self.u_road = u_road
-        self.d_road = d_road
-        self.l_road = l_road
-        self.r_road = r_road
+    def __init__(self, name, roads):
+        self.name = name
+        self.roads = roads
         self.level = 1
         self.coins = 0
         self.empire = None
         self.units = []
 
+    def __str__(self):
+        return self.roads
+
     def upgrade(self):
-        self.coins -= (self.level * 3 + 3)
+        self.coins -= round((self.level + 1) * ((5 + self.level) / 3))
         self.level += 1
 
     def equip(self):
@@ -32,7 +32,5 @@ class Village:
             name = self.names.pop(random.randint(0, len(self.names) - 1))
         self.used_names.append(name)
         self.units.append(name)
-        return Unit(name, self.empire, self.vname)
+        return Unit(name, self.empire, self.name)
 
-    def __str__(self):
-        return self.r_road, self.d_road, self.l_road, self.r_road
