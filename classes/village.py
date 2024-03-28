@@ -15,8 +15,11 @@ class Village:
         self.empire = None
         self.units = []
 
+    def __str__(self):
+        return self.roads
+
     def upgrade(self):
-        self.coins -= (self.level * 3 + 3)
+        self.coins -= round((self.level + 1) * ((5 + self.level) / 3))
         self.level += 1
 
     def equip(self):
@@ -31,5 +34,3 @@ class Village:
         self.units.append(name)
         return Unit(name, self.empire, self.name)
 
-    def __str__(self):
-        return self.roads
