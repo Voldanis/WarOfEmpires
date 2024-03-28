@@ -1,7 +1,7 @@
 class Player:
-    def __init__(self, bot, number, villages):
+    def __init__(self, bot, empire, villages):
         self.bot = bot
-        self.number = number
+        self.empire = empire
         self.villages = villages
-        self.units = {}
+        self.units = set()
         self.score = 1

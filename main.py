@@ -16,9 +16,9 @@ class Server:
         self.map_graph = dict()
         self.generate_map()
         self.units = dict()
-        self.codes = {'report_ok': 0, 'upgrade_ok': 1, 'equip_ok ': 2, 'move_ok': 3, 'wrong_command': 100,
-                      'wrong_village': 101, 'no_money': 102, 'no_space': 103, 'wrong_unit': 104,
-                      'unit_moved': 105, 'wrong_direction': 106}
+        self.codes = {'report_ok': 0, 'upgrade_ok': 1, 'equip_ok': 2, 'move_ok': 3, 'capture_ok': 4,
+                      'wrong_command': 100, 'wrong_village': 101, 'no_money': 102, 'no_space': 103, 'wrong_unit': 104,
+                      'unit_moved': 105, 'wrong_direction': 106, 'traveler': 107, 'in_homeland': 108}
         self.win_score = 60
         self.p1 = None
         self.p2 = None
@@ -72,7 +72,7 @@ class Server:
             self.p2 = Player(Boss(map_graph), 2, {'v3'})
 
     def run(self):
-        while self.p1.score < self.win_score and self.p2.score < self.win_score:
+        while self.p1.score < self.win_score and self.p2.score < self.win_score:  # сделать, чтоб выходил при убийстве соперника и после 100 ходов
             self.process_day_change()
             self.process_player(self.p1, self.p2)
             self.process_player(self.p2, self.p1)
@@ -171,6 +171,28 @@ class Server:
                     return {'status_kode': self.codes['unit_moved']}
             else:
                 return {'status_kode': self.codes['wrong_unit']}
+        elif type(request) == tuple and request[0] == 'capture':
+            if request[1] in client.units:
+                if not self.units[request[1]].is_moved:
+                    if self.units[request[1]].location[0] == 'v':
+                        if self.units[request[1]].location not in client.villages:
+                            # отбираем
+                            enemy.villages.discard(self.units[request[1]].location)
+                            enemy.score -= self.map_graph[self.units[request[1]].location].level
+                            # добавляем
+                            self.map_graph[self.units[request[1]].location].empire = self.units[request[1]].empire
+                            client.villages.add(self.units[request[1]].location)
+                            client.score += self.map_graph[self.units[request[1]].location].level
+                            self.units[request[1]].is_moved = True
+                            return self.report(self.codes['capture_ok'], client, enemy)
+                        else:
+                            return {'status_kode': self.codes['in_homeland']}
+                    else:
+                        return {'status_kode': self.codes['traveler']}
+                else:
+                    return {'status_kode': self.codes['unit_moved']}
+            else:
+                return {'status_kode': self.codes['wrong_unit']}
         else:
             return {'status_kode': self.codes['wrong_command']}
 
@@ -243,3 +265,4 @@ class Server:
 random.seed(a=835995859)
 server = Server()
 server.run()
+
