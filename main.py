@@ -17,8 +17,8 @@ class Server:
         self.generate_map()
         self.units = dict()
         self.codes = {'report_ok': 0, 'upgrade_ok': 1, 'equip_ok': 2, 'move_ok': 3, 'capture_ok': 4,
-                      'wrong_command': 100, 'wrong_village': 101, 'no_money': 102, 'no_space': 103, 'wrong_unit': 104,
-                      'unit_moved': 105, 'wrong_direction': 106, 'traveler': 107, 'in_homeland': 108}
+                      'wrong_command': 100, 'wrong_village': 101, 'no_money': 102, 'no_space': 103, 'invaders': 104,
+                      'wrong_unit': 105, 'unit_moved': 106, 'wrong_direction': 107, 'traveler': 108, 'in_homeland': 109}
         self.win_score = 60
         self.p1 = None
         self.p2 = None
@@ -96,9 +96,11 @@ class Server:
     def process_day_change(self):
         for i in range(17):
             hard_segments = self.map_graph['r' + str(i)].copy_segments()
-            for segment in hard_segments:
-                for unit in segment:
-                    self.move(unit)
+            for j in range(self.map_graph['r' + str(i)].length):
+                for unit in hard_segments[j]:
+                    victim, direction = self.move(unit)
+                    if victim:
+                        hard_segments[j + direction].remove(victim)
         for i in range(12):
             if self.map_graph['v' + str(i)].empire:
                 self.map_graph['v' + str(i)].coins += 1 + self.map_graph['v' + str(i)].level
@@ -142,16 +144,19 @@ class Server:
                 return {'status_kode': self.codes['wrong_village']}
         elif type(request) == tuple and request[0] == 'equip':
             if request[1] in client.villages:
-                if self.map_graph[request[1]].coins >= 2:
-                    if len(self.map_graph[request[1]].units) < self.map_graph[request[1]].level + 1:
-                        unit = self.map_graph[request[1]].equip()
-                        self.units[unit.name] = unit
-                        client.units.add(unit.name)
-                        return self.report(self.codes['equip_ok'], client, enemy)
+                if len(self.map_graph[request[1]].units) < 1 or self.units[self.map_graph[request[1]].units[0]].empire == self.map_graph[request[1]].empire:
+                    if self.map_graph[request[1]].coins >= 2:
+                        if len(self.map_graph[request[1]].units) <= self.map_graph[request[1]].level:
+                            unit = self.map_graph[request[1]].equip()
+                            self.units[unit.name] = unit
+                            client.units.add(unit.name)
+                            return self.report(self.codes['equip_ok'], client, enemy)
+                        else:
+                            return {'status_kode': self.codes['no_space']}
                     else:
-                        return {'status_kode': self.codes['no_space']}
+                        return {'status_kode': self.codes['no_money']}
                 else:
-                    return {'status_kode': self.codes['no_money']}
+                    return {'status_kode': self.codes['invaders']}
             else:
                 return {'status_kode': self.codes['wrong_village']}
         elif type(request) == tuple and request[0] == 'move':
@@ -177,8 +182,9 @@ class Server:
                     if self.units[request[1]].location[0] == 'v':
                         if self.units[request[1]].location not in client.villages:
                             # отбираем
-                            enemy.villages.discard(self.units[request[1]].location)
-                            enemy.score -= self.map_graph[self.units[request[1]].location].level
+                            if self.units[request[1]].location in enemy.villages:
+                                enemy.villages.discard(self.units[request[1]].location)
+                                enemy.score -= self.map_graph[self.units[request[1]].location].level
                             # добавляем
                             self.map_graph[self.units[request[1]].location].empire = self.units[request[1]].empire
                             client.villages.add(self.units[request[1]].location)
@@ -228,9 +234,13 @@ class Server:
                     correct_road = road
                     direction = -1
                     break
-            self.map_graph[self.units[unit].location].units.remove(unit)
-            self.map_graph[correct_road].segments[direction].append(unit)
-            self.units[unit].location = correct_road
+            if len(self.map_graph[correct_road].segments[direction]) > 0 and self.units[
+                    self.map_graph[correct_road].segments[direction][0]].empire != self.units[unit].empire:
+                self.battle(unit, self.map_graph[correct_road].segments[direction][0])
+            else:
+                self.map_graph[self.units[unit].location].units.remove(unit)
+                self.map_graph[correct_road].segments[direction].append(unit)
+                self.units[unit].location = correct_road
         else:
             if self.map_graph[self.units[unit].location].finish_village == self.units[unit].finish_village:
                 direction = 1
@@ -242,24 +252,48 @@ class Server:
                     pos = i
                     break
             if pos + direction < 0 or pos + direction >= self.map_graph[self.units[unit].location].length:
-                if len(self.map_graph[self.units[unit].finish_village].units) <= self.map_graph[
+                if len(self.map_graph[self.units[unit].finish_village].units) > 0 and self.units[self.map_graph[self.units[unit].finish_village].units[0]].empire != self.units[unit].empire:
+                    self.battle(unit, self.map_graph[self.units[unit].finish_village].units[0])
+                elif len(self.map_graph[self.units[unit].finish_village].units) <= self.map_graph[
                         self.units[unit].finish_village].level:
                     self.map_graph[self.units[unit].location].segments[pos].remove(unit)
                     self.map_graph[self.units[unit].finish_village].units.append(unit)
                     self.units[unit].location = self.units[unit].finish_village
             else:
-                self.map_graph[self.units[unit].location].segments[pos].remove(unit)
-                self.map_graph[self.units[unit].location].segments[pos + direction].append(unit)
-
-                '''if len(self.map_graph[correct_road].segments[direction]) > 0 and self.units[self.map_graph[correct_road].segments[direction][0]].empire != self.units[unit].empire:
-                    self.battle(unit, self.map_graph[correct_road].segments[direction][0])
+                if len(self.map_graph[self.units[unit].location].segments[pos + direction]) > 0 and \
+                        self.units[self.map_graph[self.units[unit].location].segments[pos + direction][0]].empire != self.units[unit].empire:
+                    return self.battle(unit, self.map_graph[self.units[unit].location].segments[pos + direction][0]), direction
                 else:
-                    self.make_step()'''
+                    self.map_graph[self.units[unit].location].segments[pos].remove(unit)
+                    self.map_graph[self.units[unit].location].segments[pos + direction].append(unit)
+        return None, 0
 
-            '''def battle(self):
-                pass
-            def make_step(self, init, direction):
-                index'''
+    def battle(self, attacker, target):
+        dmg = self.units[attacker].atk - self.units[target].defense
+        if dmg < 1:
+            dmg = 1
+        if self.units[target].hp - dmg <= 0:
+            return self.annihilation(target)
+        else:
+            self.units[target].hp -= dmg
+        return None
+
+    def annihilation(self, target):
+        if self.units[target].location[0] == 'v':
+            self.map_graph[self.units[target].location].units.remove(target)
+        else:
+            i = 0
+            while target not in self.map_graph[self.units[target].location].segments[i]:
+                i += 1
+            self.map_graph[self.units[target].location].segments[i].remove(target)
+        if self.units[target].empire == 1:
+            self.p1.units.remove(target)
+        else:
+            self.p2.units.remove(target)
+        Village.used_names.remove(target)
+        Village.names.append(target)
+        del self.units[target]
+        return target
 
 
 random.seed(a=835995859)
