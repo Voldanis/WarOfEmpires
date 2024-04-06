@@ -4,4 +4,4 @@ class Player:
         self.empire = empire
         self.villages = villages
         self.units = set()
-        self.score = 1
+

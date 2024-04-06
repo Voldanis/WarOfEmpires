@@ -7,9 +7,10 @@ class Boss(Example):
         super().__init__(map_graph)
         self.flag = 0
         self.not_processed = set()
+        self.name = 'Boss'
 
     def move(self, response: dict):
-        if response['status_kode'] == 103 or response['status_kode'] == 102:
+        if response['status_kode'] == 103 or response['status_kode'] == 102 or response['status_kode'] == 104:
             self.flag = 1
         if self.flag == 0:
             self.response = response

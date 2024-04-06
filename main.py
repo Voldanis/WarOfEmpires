@@ -12,7 +12,7 @@ class Server:
     def __init__(self):
         self.width = 4
         self.height = 3
-        self.delay = 0.1
+        self.delay = 0
         self.map_graph = dict()
         self.generate_map()
         self.units = dict()
@@ -20,7 +20,7 @@ class Server:
                       'wrong_command': 100, 'wrong_village': 101, 'no_money': 102, 'no_space': 103, 'invaders': 104,
                       'wrong_unit': 105, 'unit_moved': 106, 'wrong_direction': 107, 'traveler': 108, 'in_homeland': 109,
                       'not_in_homeland': 110, 'bad_money': 111, 'wrong_characteristic': 112}
-        self.win_score = 60
+        self.win_score = 600000
         self.p1 = None
         self.p2 = None
         self.identify_players()
@@ -73,26 +73,32 @@ class Server:
             self.p2 = Player(Boss(map_graph), 2, {'v3'})
 
     def run(self):
-        while self.p1.score < self.win_score and self.p2.score < self.win_score:  # сделать, чтоб выходил при убийстве соперника и после 100 ходов
+        day = 0
+        score1 = 0
+        score2 = 0
+        while score1 < self.win_score and score2 < self.win_score and day < 100:
             self.process_day_change()
             self.process_player(self.p1, self.p2)
             self.process_player(self.p2, self.p1)
-        if self.p1.score == self.p2.score:
-            print('draw!')
-        if self.p1.score >= self.win_score:
-            if type(self.p1.bot) == Bot:
-                print('player wins!')
-                print('boss score:' + str(self.p2.score))
-            else:
-                print('boss wins!')
-                print('player score:' + str(self.p2.score))
+            day += 1
+            score1 = 0
+            for v in self.p1.villages:
+                score1 += self.map_graph[v].coins
+                score1 += self.map_graph[v].level * 10000
+            score2 = 0
+            for v in self.p2.villages:
+                score2 += self.map_graph[v].coins
+                score2 += self.map_graph[v].level * 10000
+
+        if score1 > score2:
+            print(self.p1.bot.name, 'wins!')
+            print('p1 score:', score1, 'p2 score:', score2)
+        elif score1 < score2:
+            print(self.p2.bot.name, 'wins!')
+            print('p1 score:', score1, 'p2 score:', score2)
         else:
-            if type(self.p2.bot) == Bot:
-                print('player wins!')
-                print('boss score:' + str(self.p1.score))
-            else:
-                print('boss wins!')
-                print('player score:' + str(self.p1.score))
+            print('draw!')
+            print('p1 score:', score1, 'p2 score:', score2)
 
     def process_day_change(self):
         for i in range(17):
@@ -100,7 +106,7 @@ class Server:
             for j in range(self.map_graph['r' + str(i)].length):
                 for unit in hard_segments[j]:
                     victim, direction = self.move(unit)
-                    if victim:
+                    if victim and victim in hard_segments[j + direction]:
                         hard_segments[j + direction].remove(victim)
         for i in range(12):
             if self.map_graph['v' + str(i)].empire:
@@ -138,7 +144,6 @@ class Server:
                     if self.map_graph[request[1]].coins >= round((self.map_graph[request[1]].level + 1)
                                                                  * ((5 + self.map_graph[request[1]].level) / 3)):
                         self.map_graph[request[1]].upgrade()
-                        client.score += 1
                         return self.report(self.codes['upgrade_ok'], client, enemy)
                     else:
                         return {'status_kode': self.codes['no_money']}
@@ -186,11 +191,9 @@ class Server:
                                 # отбираем
                                 if self.units[request[1]].location in enemy.villages:
                                     enemy.villages.discard(self.units[request[1]].location)
-                                    enemy.score -= self.map_graph[self.units[request[1]].location].level
                                 # добавляем
                                 self.map_graph[self.units[request[1]].location].empire = self.units[request[1]].empire
                                 client.villages.add(self.units[request[1]].location)
-                                client.score += self.map_graph[self.units[request[1]].location].level
                                 self.units[request[1]].is_moved = True
                                 return self.report(self.codes['capture_ok'], client, enemy)
                             else:
