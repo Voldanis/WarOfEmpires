@@ -16,9 +16,10 @@ class Server:
         self.map_graph = dict()
         self.generate_map()
         self.units = dict()
-        self.codes = {'report_ok': 0, 'upgrade_ok': 1, 'equip_ok': 2, 'move_ok': 3, 'capture_ok': 4,
+        self.codes = {'report_ok': 0, 'upgrade_ok': 1, 'equip_ok': 2, 'move_ok': 3, 'capture_ok': 4, 'increase_ok': 5,
                       'wrong_command': 100, 'wrong_village': 101, 'no_money': 102, 'no_space': 103, 'invaders': 104,
-                      'wrong_unit': 105, 'unit_moved': 106, 'wrong_direction': 107, 'traveler': 108, 'in_homeland': 109}
+                      'wrong_unit': 105, 'unit_moved': 106, 'wrong_direction': 107, 'traveler': 108, 'in_homeland': 109,
+                      'not_in_homeland': 110, 'bad_money': 111, 'wrong_characteristic': 112}
         self.win_score = 60
         self.p1 = None
         self.p2 = None
@@ -131,74 +132,110 @@ class Server:
     def process_request(self, client, enemy, request):
         if request == 'report':
             return self.report(self.codes['report_ok'], client, enemy)
-        elif type(request) == tuple and request[0] == 'upgrade':
-            if request[1] in client.villages:
-                if self.map_graph[request[1]].coins >= round((self.map_graph[request[1]].level + 1)
-                                                             * ((5 + self.map_graph[request[1]].level) / 3)):
-                    self.map_graph[request[1]].upgrade()
-                    client.score += 1
-                    return self.report(self.codes['upgrade_ok'], client, enemy)
-                else:
-                    return {'status_kode': self.codes['no_money']}
-            else:
-                return {'status_kode': self.codes['wrong_village']}
-        elif type(request) == tuple and request[0] == 'equip':
-            if request[1] in client.villages:
-                if len(self.map_graph[request[1]].units) < 1 or self.units[self.map_graph[request[1]].units[0]].empire == self.map_graph[request[1]].empire:
-                    if self.map_graph[request[1]].coins >= 2:
-                        if len(self.map_graph[request[1]].units) <= self.map_graph[request[1]].level:
-                            unit = self.map_graph[request[1]].equip()
-                            self.units[unit.name] = unit
-                            client.units.add(unit.name)
-                            return self.report(self.codes['equip_ok'], client, enemy)
-                        else:
-                            return {'status_kode': self.codes['no_space']}
+        elif type(request) == tuple and len(request) > 1:
+            if request[0] == 'upgrade':
+                if request[1] in client.villages:
+                    if self.map_graph[request[1]].coins >= round((self.map_graph[request[1]].level + 1)
+                                                                 * ((5 + self.map_graph[request[1]].level) / 3)):
+                        self.map_graph[request[1]].upgrade()
+                        client.score += 1
+                        return self.report(self.codes['upgrade_ok'], client, enemy)
                     else:
                         return {'status_kode': self.codes['no_money']}
                 else:
-                    return {'status_kode': self.codes['invaders']}
-            else:
-                return {'status_kode': self.codes['wrong_village']}
-        elif type(request) == tuple and request[0] == 'move':
-            if request[1] in client.units:
-                if not self.units[request[1]].is_moved:
-                    if request[2] in self.map_graph[self.units[request[1]].location].roads:
-                        if self.map_graph[request[2]].finish_village != self.units[request[1]].location:
-                            self.units[request[1]].finish_village = self.map_graph[request[2]].finish_village
+                    return {'status_kode': self.codes['wrong_village']}
+            elif request[0] == 'equip':
+                if request[1] in client.villages:
+                    if len(self.map_graph[request[1]].units) < 1 or self.units[self.map_graph[request[1]].units[0]].empire == self.map_graph[request[1]].empire:
+                        if self.map_graph[request[1]].coins >= 2:
+                            if len(self.map_graph[request[1]].units) <= self.map_graph[request[1]].level:
+                                unit = self.map_graph[request[1]].equip()
+                                self.units[unit.name] = unit
+                                client.units.add(unit.name)
+                                return self.report(self.codes['equip_ok'], client, enemy)
+                            else:
+                                return {'status_kode': self.codes['no_space']}
                         else:
-                            self.units[request[1]].finish_village = self.map_graph[request[2]].start_village
-                        self.move(request[1])
-                        self.units[request[1]].is_moved = True
-                        return self.report(self.codes['move_ok'], client, enemy)
+                            return {'status_kode': self.codes['no_money']}
                     else:
-                        return {'status_kode': self.codes['wrong_direction']}
+                        return {'status_kode': self.codes['invaders']}
                 else:
-                    return {'status_kode': self.codes['unit_moved']}
-            else:
-                return {'status_kode': self.codes['wrong_unit']}
-        elif type(request) == tuple and request[0] == 'capture':
-            if request[1] in client.units:
-                if not self.units[request[1]].is_moved:
-                    if self.units[request[1]].location[0] == 'v':
-                        if self.units[request[1]].location not in client.villages:
-                            # отбираем
-                            if self.units[request[1]].location in enemy.villages:
-                                enemy.villages.discard(self.units[request[1]].location)
-                                enemy.score -= self.map_graph[self.units[request[1]].location].level
-                            # добавляем
-                            self.map_graph[self.units[request[1]].location].empire = self.units[request[1]].empire
-                            client.villages.add(self.units[request[1]].location)
-                            client.score += self.map_graph[self.units[request[1]].location].level
+                    return {'status_kode': self.codes['wrong_village']}
+            elif request[0] == 'move' and len(request) == 3:
+                if request[1] in client.units:
+                    if not self.units[request[1]].is_moved:
+                        if request[2] in self.map_graph[self.units[request[1]].location].roads:
+                            if self.map_graph[request[2]].finish_village != self.units[request[1]].location:
+                                self.units[request[1]].finish_village = self.map_graph[request[2]].finish_village
+                            else:
+                                self.units[request[1]].finish_village = self.map_graph[request[2]].start_village
+                            self.move(request[1])
                             self.units[request[1]].is_moved = True
-                            return self.report(self.codes['capture_ok'], client, enemy)
+                            return self.report(self.codes['move_ok'], client, enemy)
                         else:
-                            return {'status_kode': self.codes['in_homeland']}
+                            return {'status_kode': self.codes['wrong_direction']}
+                    else:
+                        return {'status_kode': self.codes['unit_moved']}
+                else:
+                    return {'status_kode': self.codes['wrong_unit']}
+            elif request[0] == 'capture':
+                if request[1] in client.units:
+                    if not self.units[request[1]].is_moved:
+                        if self.units[request[1]].location[0] == 'v':
+                            if self.units[request[1]].location not in client.villages:
+                                # отбираем
+                                if self.units[request[1]].location in enemy.villages:
+                                    enemy.villages.discard(self.units[request[1]].location)
+                                    enemy.score -= self.map_graph[self.units[request[1]].location].level
+                                # добавляем
+                                self.map_graph[self.units[request[1]].location].empire = self.units[request[1]].empire
+                                client.villages.add(self.units[request[1]].location)
+                                client.score += self.map_graph[self.units[request[1]].location].level
+                                self.units[request[1]].is_moved = True
+                                return self.report(self.codes['capture_ok'], client, enemy)
+                            else:
+                                return {'status_kode': self.codes['in_homeland']}
+                        else:
+                            return {'status_kode': self.codes['traveler']}
+                    else:
+                        return {'status_kode': self.codes['unit_moved']}
+                else:
+                    return {'status_kode': self.codes['wrong_unit']}
+            elif request[0] == 'increase' and len(request) == 4 :
+                if request[1] in client.units:
+                    if self.units[request[1]].location[0] == 'v':
+                        if self.units[request[1]].location in client.villages:
+                            if type(request[3]) == int and request[3] > 0:
+                                if request[3] <= self.map_graph[self.units[request[1]].location].coins:
+                                    if request[2] == 'atk':
+                                        self.units[request[1]].atk += request[3]
+                                        self.map_graph[self.units[request[1]].location].coins -= request[3]
+                                    elif request[2] == 'def':
+                                        self.units[request[1]].defense += request[3]
+                                        self.map_graph[self.units[request[1]].location].coins -= request[3]
+                                    elif request[2] == 'max_hp':
+                                        self.units[request[1]].max_hp += request[3] * 4
+                                        self.map_graph[self.units[request[1]].location].coins -= request[3]
+                                    elif request[2] == 'heal':
+                                        self.units[request[1]].hp += request[3] * 4
+                                        if self.units[request[1]].hp > self.units[request[1]].max_hp:
+                                            self.units[request[1]].hp = self.units[request[1]].max_hp
+                                        self.map_graph[self.units[request[1]].location].coins -= request[3]
+                                    else:
+                                        return {'status_kode': self.codes['wrong_characteristic']}
+                                    return self.report(self.codes['increase_ok'], client, enemy)
+                                else:
+                                    return {'status_kode': self.codes['no_money']}
+                            else:
+                                return {'status_kode': self.codes['bad_money']}
+                        else:
+                            return {'status_kode': self.codes['not_in_homeland']}
                     else:
                         return {'status_kode': self.codes['traveler']}
                 else:
-                    return {'status_kode': self.codes['unit_moved']}
+                    return {'status_kode': self.codes['wrong_unit']}
             else:
-                return {'status_kode': self.codes['wrong_unit']}
+                return {'status_kode': self.codes['wrong_command']}
         else:
             return {'status_kode': self.codes['wrong_command']}
 
@@ -299,4 +336,5 @@ class Server:
 random.seed(a=835995859)
 server = Server()
 server.run()
+
 
