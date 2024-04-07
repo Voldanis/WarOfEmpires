@@ -3,7 +3,7 @@ class Unit:
         self.name = name
         self.empire = empire
         self.location = location
-        self.finish_village = None
+        self.finish_town = None
         self.is_moved = True
         self.max_hp = 4
         self.hp = 4

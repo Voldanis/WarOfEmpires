@@ -5,7 +5,7 @@ class Example:
         self.name = 'Player'
 
     def move(self, response: dict):
-        if response['status_kode'] == 0:
+        if response['status_code'] == 0:
             self.response = response
         return 'end'
 
@@ -13,8 +13,8 @@ class Example:
 команды:
     'report' - получить отчет о состоянии поля
     'end' - конец вашего хода
-    'upgrade', {village}  - улучшить деревню. village - имя деревни
-    'equip', {village} - экипировать воина. village - имя деревни
+    'upgrade', {town}  - улучшить город. town - имя города
+    'equip', {town} - экипировать воина. town - имя города
     'move', {unit}, {road} - отправить юнита по одному из направлений. unit - имя юнита. road - имя дороги
     'capture', {unit} - Захватить город. unit - имя юнита, находящегося во вражеском городе
     'increase', {unit}, {characteristic}, {coins}  - Улучшить одну из характеристик юнита. unit - имя юнита.
@@ -27,7 +27,7 @@ class Example:
     4  # capture ok
     5  # increase ok
     100  # неизвестная команда
-    101 # выбрана не принадлежащая игроку деревня
+    101 # выбрана не принадлежащий игроку город
     102  # недостаточно средств
     103  # недостаточно места в городе
     104  # в городе захватчики

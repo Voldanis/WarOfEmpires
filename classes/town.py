@@ -3,7 +3,7 @@ import random
 from classes.unit import Unit
 
 
-class Village:
+class Town:
     names = ['greed', 'edgar', 'qina', 'tina', 'tu', 'fred', 'qila', 'twez', 'sas', 'hu', 'jif', 'olga', 'efgri', 'grif', 'geed', 'nutti', 'qn', 'astrid', 'qia', 'fraid', 'fafi', 'qsvi', 'q', 'jap', 'hugh', 'qtx', 'zes', 'dog', 'zeus', 'svagrik', 'efra', 'efgrid', 'graf', 'elgrad', 'okjewu', 'efrida', 'alah', 'faid', 'fafid', 'hron', 'svag', 'fagr', 'ew', 'hill', 'wez', 'zag', 'stu', 'sasla', 'feid', 'olha', 'zags']
     used_names = []
 
@@ -14,9 +14,6 @@ class Village:
         self.coins = 0
         self.empire = None
         self.units = []
-
-    def __str__(self):
-        return self.roads
 
     def upgrade(self):
         self.coins -= round((self.level + 1) * ((5 + self.level) / 3))
