@@ -7,10 +7,12 @@ class Boss(Example):
         super().__init__(map_graph)
         self.flag = 0
         self.not_processed = set()
+        self.response = None
         self.name = 'Boss'
 
-    def move(self, response: dict):
-        if response['status_code'] == 103 or response['status_code'] == 102 or response['status_code'] == 104:
+
+
+'''if response['status_code'] == 103 or response['status_code'] == 102 or response['status_code'] == 104:
             self.flag = 1
         if self.flag == 0:
             self.response = response
@@ -28,4 +30,5 @@ class Boss(Example):
                     return 'move', unit, 'aboba'
             self.flag = 0
         return 'end'
+'''
 

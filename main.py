@@ -1,5 +1,6 @@
 import time
 import random
+import multiprocessing
 
 from bots.boss import Boss
 from bots.bot import Bot
@@ -77,6 +78,8 @@ class Server:
         score1 = 0
         score2 = 0
         while score1 < self.win_score and score2 < self.win_score and day < 100:
+            print('--------------------------')
+            print('day', day)
             self.process_player(self.p1, self.p2)
             self.process_player(self.p2, self.p1)
             day += 1
@@ -100,12 +103,27 @@ class Server:
 
     def process_player(self, client, enemy):
         self.process_beginning_move(client)
-        request = 'report'
-        while request != 'end':
-            response = self.process_request(client, enemy, request)
-            print(response['status_code'])
-            request = client.bot.move(response)
-            print(request)
+        client_requests = []
+        try:
+            manager = multiprocessing.Manager()
+            return_val = manager.dict()
+            p = multiprocessing.Process(target=self.get_client_requests, args=(client, enemy, return_val))
+            p.start()
+            p.join(0.5)
+            if p.is_alive():
+                p.kill()
+                text = client.bot.name + ' are too slow'
+                raise TimeoutError(text)
+            else:
+                client_requests = return_val['requests']
+        except TimeoutError as ter:
+            print(ter)
+        except Exception as what:
+            print(what)
+        for req in client_requests:
+            print(req)
+            resp = self.process_request(client, enemy, req)
+            print(resp['status_code'])
             time.sleep(self.delay)
 
     def process_beginning_move(self, client):
@@ -127,12 +145,15 @@ class Server:
                             if self.units[unit].is_moved:
                                 self.units[unit].is_moved = False
 
-
         fixed_queue = client.units_queue.copy()
         for unit in fixed_queue:
             self.move(unit)
         print('--------------------------')
         time.sleep(self.delay)
+
+    def get_client_requests(self, client, enemy, return_val):
+        report = self.report(self.codes['report_ok'], client, enemy)
+        return_val['requests'] = client.bot.move(report)
 
     def process_request(self, client, enemy, request):
         if request == 'report':
@@ -143,7 +164,7 @@ class Server:
                     if self.map_graph[request[1]].coins >= round((self.map_graph[request[1]].level + 1)
                                                                  * ((5 + self.map_graph[request[1]].level) / 3)):
                         self.map_graph[request[1]].upgrade()
-                        return self.report(self.codes['upgrade_ok'], client, enemy)
+                        return {'status_code': self.codes['upgrade_ok']}
                     else:
                         return {'status_code': self.codes['no_money']}
                 else:
@@ -157,7 +178,7 @@ class Server:
                                 unit = self.map_graph[request[1]].equip()
                                 self.units[unit.name] = unit
                                 client.units.add(unit.name)
-                                return self.report(self.codes['equip_ok'], client, enemy)
+                                return {'status_code': self.codes['equip_ok']}
                             else:
                                 return {'status_code': self.codes['no_space']}
                         else:
@@ -177,7 +198,7 @@ class Server:
                             self.move(request[1])
                             self.units[request[1]].is_moved = True
                             client.units_queue.append(request[1])
-                            return self.report(self.codes['move_ok'], client, enemy)
+                            return {'status_code': self.codes['move_ok']}
                         else:
                             return {'status_code': self.codes['wrong_direction']}
                     else:
@@ -196,7 +217,7 @@ class Server:
                                 self.map_graph[self.units[request[1]].location].empire = self.units[request[1]].empire
                                 client.towns.add(self.units[request[1]].location)
                                 self.units[request[1]].is_moved = True
-                                return self.report(self.codes['capture_ok'], client, enemy)
+                                return {'status_code': self.codes['capture_ok']}
                             else:
                                 return {'status_code': self.codes['in_homeland']}
                         else:
@@ -227,7 +248,7 @@ class Server:
                                         self.map_graph[self.units[request[1]].location].coins -= request[3]
                                     else:
                                         return {'status_code': self.codes['wrong_characteristic']}
-                                    return self.report(self.codes['increase_ok'], client, enemy)
+                                    return {'status_code': self.codes['increase_ok']}
                                 else:
                                     return {'status_code': self.codes['no_money']}
                             else:
@@ -256,9 +277,21 @@ class Server:
             client_units_data[i] = {'location': self.units[i].location, 'max_hp': self.units[i].max_hp,
                                     'hp': self.units[i].hp, 'atk': self.units[i].atk, 'defense': self.units[i].defense,
                                     'is_moved': self.units[i].is_moved}
+            if self.units[i].location[0] == 'r':
+                client_units_data[i]['finish_town'] = self.units[i].finish_town
+                for segment in range(self.map_graph[self.units[i].location].length):
+                    if i in self.map_graph[self.units[i].location].segments[segment]:
+                        client_units_data[i]['segment'] = segment
+                        break
         for i in enemy.units:
             enemy_units_data[i] = {'location': self.units[i].location, 'hp': self.units[i].hp, 'atk': self.units[i].atk,
                                    'defense': self.units[i].defense}
+            if self.units[i].location[0] == 'r':
+                enemy_units_data[i]['finish_town'] = self.units[i].finish_town
+                for segment in range(self.map_graph[self.units[i].location].length):
+                    if i in self.map_graph[self.units[i].location].segments[segment]:
+                        enemy_units_data[i]['segment'] = segment
+                        break
         return {'status_code': status_code, 'player_towns': client_towns_data, 'enemy_towns': enemy_towns_data,
                 'player_units': client_units_data, 'enemy_units': enemy_units_data}
 
@@ -350,6 +383,7 @@ class Server:
         return target
 
 
-random.seed(a=835995859)
-server = Server()
-server.run()
+if __name__ == "__main__":
+    random.seed(a=835995859)
+    server = Server()
+    server.run()
