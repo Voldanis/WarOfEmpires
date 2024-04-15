@@ -1,6 +1,7 @@
 import time
 import random
 import multiprocessing
+import pygame
 
 from bots.boss import Boss
 from bots.bot import Bot
@@ -77,29 +78,68 @@ class Server:
         day = 0
         score1 = 0
         score2 = 0
-        while score1 < self.win_score and score2 < self.win_score and day < 100:
-            print('--------------------------')
-            print('day', day)
-            self.process_player(self.p1, self.p2)
-            self.process_player(self.p2, self.p1)
-            day += 1
-            score1 = 0
-            for t in self.p1.towns:
-                score1 += self.map_graph[t].coins
-                score1 += self.map_graph[t].level * 10000
-            score2 = 0
-            for t in self.p2.towns:
-                score2 += self.map_graph[t].coins
-                score2 += self.map_graph[t].level * 10000
+        pygame.init()
+        castels = [[120, 80, '#EFE3AF'], [420, 80, '#EFE3AF'], [720, 80, '#EFE3AF'], [1020, 80, '#3F47CC'],
+                    [120, 300, '#EFE3AF'], [420, 300, '#EFE3AF'], [720, 300, '#EFE3AF'], [1020, 300, '#EFE3AF'],
+                    [120, 520, '#ED1B24'], [420, 520, '#EFE3AF'], [720, 520, '#EFE3AF'], [1020, 520, '#EFE3AF']]
+        ways_coords_gor = [[240, 120], [540, 120], [840, 120],
+                           [240, 340], [540, 340], [840, 340],
+                           [240, 560], [540, 560], [840, 560]]
+        ways_coords_ver = [[160, 200], [460, 200], [760, 200], [1060, 200],
+                           [160, 420], [460, 420], [760, 420], [1060, 420]]
+        screen = pygame.display.set_mode((1280, 708))
+        screen.fill('#B5E51D')
+        running = True
+        flag = True
+        clock = pygame.time.Clock()
+        while running:
 
-        if score1 > score2:
-            print(self.p1.bot.name, 'wins!')
-        elif score1 < score2:
-            print(self.p2.bot.name, 'wins!')
-        else:
-            print('draw!')
-        print(self.p1.bot.name, 'score:', score1)
-        print(self.p2.bot.name, 'score:', score2)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+            if score1 < self.win_score and score2 < self.win_score and day < 100:
+                print('--------------------------')
+                print('day', day)
+                self.process_player(self.p1, self.p2)
+                self.process_player(self.p2, self.p1)
+                day += 1
+                score1 = 0
+                for t in self.p1.towns:
+                    score1 += self.map_graph[t].coins
+                    score1 += self.map_graph[t].level * 10000
+                score2 = 0
+                for t in self.p2.towns:
+                    score2 += self.map_graph[t].coins
+                    score2 += self.map_graph[t].level * 10000
+
+                for i in range(len(castels)):
+                    print(self.map_graph[f't{i}'].empire)
+                    if self.map_graph[f't{i}'].empire == 1:
+                        castels[i][2] = '#ED1B24'
+                    elif self.map_graph[f't{i}'].empire == 2:
+                        castels[i][2] = '#3F47CC'
+                    else:
+                        castels[i][2] = '#EFE3AF'
+                    pygame.draw.rect(screen, castels[i][2],
+                                     (castels[i][0], castels[i][1], 120, 120))
+                    if i < len(ways_coords_gor):
+                        pygame.draw.rect(screen, '#FFC90D', (ways_coords_gor[i][0], ways_coords_gor[i][1], 180, 40))
+                    if i < len(ways_coords_ver):
+                        pygame.draw.rect(screen, '#FFC90D', (ways_coords_ver[i][0], ways_coords_ver[i][1], 40, 100))
+            else:
+                if flag == True:
+                    if score1 > score2:
+                        print(self.p1.bot.name, 'wins!')
+                    elif score1 < score2:
+                        print(self.p2.bot.name, 'wins!')
+                    else:
+                        print('draw!')
+                    print(self.p1.bot.name, 'score:', score1)
+                    print(self.p2.bot.name, 'score:', score2)
+                    flag = False
+            pygame.display.flip()
+            # clock.tick(2)
+        pygame.quit()
 
     def process_player(self, client, enemy):
         self.process_beginning_move(client)
