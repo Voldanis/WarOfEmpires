@@ -149,7 +149,7 @@ class Server:
             return_val = manager.dict()
             p = multiprocessing.Process(target=self.get_client_requests, args=(client, enemy, return_val))
             p.start()
-            p.join(0.5)
+            p.join()
             if p.is_alive():
                 p.kill()
                 text = client.bot.name + ' are too slow'
