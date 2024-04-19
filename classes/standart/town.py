@@ -1,6 +1,6 @@
 import random
 
-from classes.unit import Unit
+from classes.standart.unit import Unit
 
 
 class Town:
