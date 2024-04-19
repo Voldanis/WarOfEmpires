@@ -1,13 +1,10 @@
 class Example:
     def __init__(self, map_graph):
         self.map_graph = map_graph
-        self.response = None
         self.name = 'Player'
 
     def move(self, response: dict):
-        if response['status_code'] == 0:
-            self.response = response
-        return 'end'
+        return []
 
 '''
 команды:

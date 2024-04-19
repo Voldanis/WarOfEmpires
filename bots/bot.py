@@ -1,6 +1,8 @@
 import random
 
+
 from bots.example import Example
+
 
 
 class Bot(Example):
@@ -11,7 +13,13 @@ class Bot(Example):
         self.not_processed_t = list()
 
     def move(self, response: dict):
-        if response['status_code'] == 103 or response['status_code'] == 102 or response['status_code'] == 104:
+        reqs = [('equip', 't3')]
+        if len(response['player_units'].keys()) > 0:
+            unit = random.choice(list(response['player_units'].keys()))
+            road = random.choice(['r2', 'r6'])
+            reqs.append(('move', unit, road))
+        return reqs
+'''if response['status_code'] == 103 or response['status_code'] == 102 or response['status_code'] == 104:
             self.flag = 1
         if self.flag == 0:
             self.response = response
@@ -35,4 +43,5 @@ class Bot(Example):
                 return 'upgrade', town
             self.flag = 0
         return 'end'
+'''
 
