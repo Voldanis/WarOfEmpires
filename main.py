@@ -141,7 +141,6 @@ class Server:
                         if self.units[unit].finish_town is None and self.units[unit].empire == client.empire:
                             if self.units[unit].is_moved:
                                 self.units[unit].is_moved = False
-
         fixed_queue = client.units_queue.copy()
         for unit in fixed_queue:
             self.move(unit)
@@ -154,6 +153,7 @@ class Server:
             return_val['requests'] = client.bot.move(cv, ev, cu, eu)
         except Exception as what:
             print(client.bot.name, 'error:', what)
+
 
     def process_request(self, client, enemy, request):
         if type(request) == tuple and len(request) > 1:
