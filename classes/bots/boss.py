@@ -1,13 +1,9 @@
-import random
-from bots.example import Example
+from classes.bots.example import Example
 
 
 class Boss(Example):
     def __init__(self, map_graph):
         super().__init__(map_graph)
-        self.flag = 0
-        self.not_processed = set()
-        self.response = None
         self.name = 'Boss'
 
 
