@@ -21,7 +21,6 @@ class Bot(Example):
         self.player_towns = None
         self.name = 'Bot'
         logging.warning(map_graph)
-
     def genMaps(self):
         logging.warning("aaaaa")
         rez={}
@@ -55,6 +54,26 @@ class Bot(Example):
 
         # есть 2 стадии игры: разведка и деф/атак, пока пишу разведку и защиту
         return self.stadiaR(inp)
+
+    def defallTown(self):
+        for t in self.player_towns:
+            name=t.name
+            roads=self.map_graph[name]
+            self.defTown(t,self.poiskUnitsOnAtack(roads))
+
+    def defTown(self, town, roads):
+        pass
+        #for r in roads:
+           # sim(9)
+
+    def poiskUnitsOnAtack(self, roads):
+        rez={}
+        for i in roads:
+            rez[i]=[]
+        for u in self.enemy_units:
+            if u.location in roads:
+                rez[u.location].append(u)
+        return rez
 
     def stadiaR(self, inp):
         townsNearbady = []
