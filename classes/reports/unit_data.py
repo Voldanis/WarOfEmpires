@@ -10,3 +10,5 @@ class UnitData:
         if player == 'client':
             self.max_hp = unit.max_hp
             self.is_moved = unit.is_moved
+
+

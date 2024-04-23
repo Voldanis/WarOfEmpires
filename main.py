@@ -118,6 +118,7 @@ class Server:
                 raise TimeoutError(text)
         except TimeoutError as ter:
             print(ter)
+
         for req in self.requests['requests']:
             print(req)
             print(self.process_request(client, enemy, req))

@@ -4,7 +4,19 @@ from classes.bots.example import Example
 class Boss(Example):
     def __init__(self, map_graph):
         super().__init__(map_graph)
+        self.enemy_units = None
+        self.enemy_towns = None
+        self.player_units = None
+        self.player_towns = None
         self.name = 'Boss'
+    def move(self, client_towns: list, enemy_towns: list, client_units: list, enemy_units: list):
+        self.player_towns = client_towns
+        self.enemy_towns = enemy_towns
+        self.player_units = client_units
+        self.enemy_units = enemy_towns
+
+        return []
+        
 
 
 
