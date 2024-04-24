@@ -20,9 +20,7 @@ class Bot(Example):
         self.player_units = None
         self.player_towns = None
         self.name = 'Bot'
-        logging.warning(map_graph)
     def genMaps(self):
-        logging.warning("aaaaa")
         rez={}
         a={}
         for i in self.player_towns:
@@ -33,10 +31,11 @@ class Bot(Example):
             a[i.name]={'level': i.level}
         rez['enemy_towns']=a
         a={}
-        logging.warning("ssssss")
         for i in self.player_units:
+
             a[i.name] = {'location':i.location, 'is_moved': i.is_moved, 'finish_town': i.finish_town}
         rez['player_units'] = a
+        a={}
         for i in self.enemy_units:
             a[i.name] = {'location':i.location}
         rez['enemy_units'] = a
@@ -51,6 +50,13 @@ class Bot(Example):
         inp=self.genMaps()
         self.inp=inp
         self.rez = []
+        logging.warning('wwwwwww')
+        for i in client_units:
+            a=str(i.location)+' '+str(i.finish_town)
+            logging.warning(a)
+        logging.warning('wwwwwww')
+        logging.warning(inp['player_units'])
+        logging.warning('wwwwwww')
 
         # есть 2 стадии игры: разведка и деф/атак, пока пишу разведку и защиту
         return self.stadiaR(inp)
@@ -77,7 +83,6 @@ class Bot(Example):
 
     def stadiaR(self, inp):
         townsNearbady = []
-        logging.warning(inp['player_towns'])
         for u in inp['player_units']:
             loc = inp['player_units'][u]['location']
             a = True
