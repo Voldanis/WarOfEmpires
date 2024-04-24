@@ -29,7 +29,7 @@ class Bot(Example):
             a[i.name]={'level': i.level}
         rez['player_towns']=a
         a={}
-        for i in self.enemy_units:
+        for i in self.enemy_towns:
             a[i.name]={'level': i.level}
         rez['enemy_towns']=a
         a={}
