@@ -4,7 +4,22 @@ from classes.standart.unit import Unit
 
 
 class Town:
-    names = ['greed', 'edgar', 'qina', 'tina', 'tu', 'fred', 'qila', 'twez', 'sas', 'hu', 'jif', 'olga', 'efgri', 'grif', 'geed', 'nutti', 'qn', 'astrid', 'qia', 'fraid', 'fafi', 'qsvi', 'q', 'jap', 'hugh', 'qtx', 'zes', 'dog', 'zeus', 'svagrik', 'efra', 'efgrid', 'graf', 'elgrad', 'okjewu', 'efrida', 'alah', 'faid', 'fafid', 'hron', 'svag', 'fagr', 'ew', 'hill', 'wez', 'zag', 'stu', 'sasla', 'feid', 'olha', 'zags']
+    names = ['Pof', 'XD', 'Odii', 'Fred', 'Mi', 'Uga', 'Era', 'Fun', 'Zvi', 'Ten', 'Prank', 'Omnom', 'Michel', 'Grif',
+             'Ziwix', 'Tet', 'Summer', 'Q', 'Stu', 'Igyana', 'Tomorrow', 'Sigma', 'Kuzya', 'Soika', 'Edgar', 'Quick',
+             'Hu', 'Miss', 'Astrid', 'Hill', 'Efgri', 'Spring', 'Fiona', 'Om', 'Sayanara', 'Elgrad', 'Cobra', 'Enk',
+             'Sey', 'Glowing', 'Bep', 'Cat', 'Lyi', 'Madam', 'Jap', 'Vic', 'Sas', 'Ly', 'Gisp', 'Jic', 'Alah', 'Hloya',
+             'Rabr', 'Thunderstorm', 'Dead', 'Runner', 'Macadamia', 'Edri', 'Jik', 'Oval', 'Arb', 'Update', 'Ex', 'Soa',
+             'Sky', 'Dervish', 'Fagr', 'Yong', 'Yad', 'Jessika', 'Wise', 'Kia', 'Lemon', 'Kuz', 'Mijivan', 'Owl', 'Lu',
+             'Jam', 'Doad', 'Zag', 'Nutti', 'Mickey', 'Gem', 'Odri', 'Ju', 'Eleven', 'Vasya', 'Zeus', 'Kai', 'Dodo',
+             'Svag', 'Zombie', 'Hait', 'Ne', 'Wasix', 'Ziy', 'Efrieda', 'Karp', 'Olga', 'Zags', 'Sonya', 'Сhloe',
+             'Seer', 'Enkza', 'Qn', 'X', 'Minion', 'Magical', 'Fafid', 'Dj', 'Faid', 'Tu', 'Hoy', 'Casey', 'Exza',
+             'Bit', 'Thor', 'Staring', 'Geed', 'Ew', 'Enxap', 'Pap', 'Jif', 'Nlo', 'Ven', 'Graf', 'Okjewu', 'Iole',
+             'Thunder', 'Fej', 'Minivan', 'Isona', 'Zap', 'Gerry', 'Sasla', 'Qm', 'Ritchie', 'Svagrik', 'Dog', 'Hyk',
+             'Mep', 'Greed', 'Magikarp', 'Efgrid', 'Ded', 'Cj', 'Loop', 'Yxxx', 'Jesus', 'Qia', 'Noy', 'Twez', 'Saya',
+             'Brat', 'Hugh', 'Marika', 'Feid', 'Ivix', 'Bob', 'Kjaben', 'Tank', 'Soe', 'Qtx', 'Crystal', 'Winged',
+             'Hey', 'Hron', 'Tor', 'Padavan', 'Freeman', 'Qsvi', 'Perry', 'Rich', 'Zasno', 'Say', 'Wez', 'Zes', 'Aski',
+             'Wasya', 'Mic', 'Acid', 'Tina', 'Exzo', 'Pif', 'Flux', 'Storm', 'Lea', 'Alkali', 'Poi', 'Efra', 'Holly',
+             'Karncy', 'Genry', 'Fafi', 'Brother', 'Fraid', 'Olha', 'Soya', 'Clerk', 'Qila', 'Ufo', 'Mr', 'Qina', 'Ben']
     used_names = []
 
     def __init__(self, name, roads):

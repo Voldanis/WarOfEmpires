@@ -108,21 +108,20 @@ class Server:
     def process_player(self, client, enemy):
         self.process_beginning_move(client)
         self.requests['requests'] = []
-        try:
-            p = multiprocessing.Process(target=self.get_client_requests, args=(client, enemy, self.requests))
-            p.start()
-            p.join(0.15)  # 0.15 -> 0.1 задержка
-            if p.is_alive():
-                p.terminate()
-                text = client.bot.name + ' is too slow'
-                raise TimeoutError(text)
-        except TimeoutError as ter:
-            print(ter)
+        p = multiprocessing.Process(target=self.get_client_requests, args=(client, enemy, self.requests))
+        p.start()
+        p.join(0.15)  # 0.15 -> 0.1 задержка
+        if p.is_alive():
+            p.terminate()
+            print(client.bot.name + ' is too slow')
 
-        for req in self.requests['requests']:
-            print(req)
-            print(self.process_request(client, enemy, req))
-            time.sleep(self.delay)
+        if type(self.requests['requests']) == list:
+            for req in self.requests['requests']:
+                print(req)
+                print(self.process_request(client, enemy, req))
+                time.sleep(self.delay)
+        else:
+            print(client.bot.name, 'error: wrong output')
 
     def process_beginning_move(self, client):
         for town in self.map_graph.keys():
