@@ -11,4 +11,11 @@ class UnitData:
             self.max_hp = unit.max_hp
             self.is_moved = unit.is_moved
 
-
+    def __init__(self, hp, defence, atk, location):
+        self.name = 'aaa'
+        self.location = location
+        self.segment = None
+        self.finish_town = None
+        self.hp = hp
+        self.atk = atk
+        self.defense = defence
