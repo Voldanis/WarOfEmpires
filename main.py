@@ -22,7 +22,7 @@ class Server:
         self.codes = {'report_ok': 0, 'upgrade_ok': 1, 'equip_ok': 2, 'move_ok': 3, 'capture_ok': 4, 'increase_ok': 5,
                       'wrong_command': 100, 'wrong_town': 101, 'no_money': 102, 'no_space': 103, 'invaders': 104,
                       'wrong_unit': 105, 'unit_moved': 106, 'wrong_direction': 107, 'traveler': 108, 'in_homeland': 109,
-                      'not_in_homeland': 110, 'bad_money': 111, 'wrong_characteristic': 112}
+                      'not_in_homeland': 110, 'bad_money': 111, 'wrong_characteristic': 112, 'unit_already_exist': 113}
         self.win_score = 600000
         self.p1 = None
         self.p2 = None
@@ -177,10 +177,21 @@ class Server:
                             self.map_graph[request[1]].units[0]].empire == self.map_graph[request[1]].empire:
                         if self.map_graph[request[1]].coins >= 2:
                             if len(self.map_graph[request[1]].units) <= self.map_graph[request[1]].level:
-                                unit = self.map_graph[request[1]].equip()
-                                self.units[unit.name] = unit
-                                client.units.add(unit.name)
-                                return self.codes['equip_ok']
+                                if len(request) == 2:
+                                    unit = self.map_graph[request[1]].equip()
+                                    self.units[unit.name] = unit
+                                    client.units.add(unit.name)
+                                    return self.codes['equip_ok']
+                                elif len(request) == 3 and type(request[2]) == str:
+                                    if request[2] not in Town.used_names:
+                                        unit = self.map_graph[request[1]].equip(request[2])
+                                        self.units[unit.name] = unit
+                                        client.units.add(unit.name)
+                                        return self.codes['equip_ok']
+                                    else:
+                                        return self.codes['unit_already_exist']
+                                else:
+                                    return self.codes['wrong_command']
                             else:
                                 return self.codes['no_space']
                         else:

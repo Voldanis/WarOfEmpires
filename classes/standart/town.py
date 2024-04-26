@@ -34,14 +34,17 @@ class Town:
         self.coins -= round((self.level + 1) * ((5 + self.level) / 3))
         self.level += 1
 
-    def equip(self):
+    def equip(self, name=None):
         self.coins -= 2
-        if len(self.names) <= 0:
-            name = str(random.randint(0, 10 ** 9))
-            while name in self.used_names:
+        if name is None:
+            if len(self.names) <= 0:
                 name = str(random.randint(0, 10 ** 9))
-        else:
-            name = self.names.pop(random.randint(0, len(self.names) - 1))
+                while name in self.used_names:
+                    name = str(random.randint(0, 10 ** 9))
+            else:
+                name = self.names.pop(random.randint(0, len(self.names) - 1))
+        elif name in self.names:
+            self.names.remove(name)
         self.used_names.append(name)
         self.units.append(name)
         return Unit(name, self.empire, self.name)

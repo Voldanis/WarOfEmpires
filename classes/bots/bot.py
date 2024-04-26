@@ -9,7 +9,7 @@ class Bot(Example):
         self.name = 'Nomad'
 
     def move(self, client_towns: list, enemy_towns: list, client_units: list, enemy_units: list):
-        reqs = []
+        '''reqs = []
         client_towns_names = []
         for town in client_towns:
             reqs.append(('equip', town.name))
@@ -20,7 +20,7 @@ class Bot(Example):
                     reqs.append(('capture', unit.name))
                 else:
                     road = random.choice(list(self.map_graph[unit.location]))
-                    reqs.append(('move', unit.name, road))
-        return reqs
+                    reqs.append(('move', unit.name, road))'''
+        return [('equip', client_towns[0].name, 'aboba')]
 
 
