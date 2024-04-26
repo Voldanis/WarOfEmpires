@@ -1,10 +1,10 @@
 import random
 import logging
-
+import time
 
 from classes.bots.example import Example
-
-
+from classes.reports import unit_data
+from classes.standart import unit
 
 class Boss(Example):
     def __init__(self, map_graph):
@@ -12,33 +12,33 @@ class Boss(Example):
         self.flag = 0
         self.not_processed_u = list()
         self.not_processed_t = list()
-        self.rez=[]
-        self.inp={}
-        self.unitMove=[]
+        self.rez = []
+        self.inp = {}
+        self.unitMove = []
         self.enemy_units = None
         self.enemy_towns = None
         self.player_units = None
         self.player_towns = None
-        self.name = 'Boss'
-        logging.warning(map_graph)
+        self.name = 'Bot'
+        self.unitInTown=[]
+
     def genMaps(self):
-        logging.warning("aaaaa")
-        rez={}
-        a={}
+        rez = {}
+        a = {}
         for i in self.player_towns:
-            a[i.name]={'level': i.level}
-        rez['player_towns']=a
-        a={}
+            a[i.name] = {'level': i.level}
+        rez['player_towns'] = a
+        a = {}
         for i in self.enemy_towns:
-            a[i.name]={'level': i.level}
-        rez['enemy_towns']=a
-        a={}
-        logging.warning("ssssss")
+            a[i.name] = {'level': i.level}
+        rez['enemy_towns'] = a
+        a = {}
         for i in self.player_units:
-            a[i.name] = {'location':i.location, 'is_moved': i.is_moved, 'finish_town': i.finish_town}
+            a[i.name] = {'location': i.location, 'is_moved': i.is_moved, 'finish_town': i.finish_town}
         rez['player_units'] = a
+        a = {}
         for i in self.enemy_units:
-            a[i.name] = {'location':i.location}
+            a[i.name] = {'location': i.location}
         rez['enemy_units'] = a
 
         return rez
@@ -48,8 +48,8 @@ class Boss(Example):
         self.enemy_towns = enemy_towns
         self.player_units = client_units
         self.enemy_units = enemy_units
-        inp=self.genMaps()
-        self.inp=inp
+        inp = self.genMaps()
+        self.inp = inp
         self.rez = []
 
         # есть 2 стадии игры: разведка и деф/атак, пока пишу разведку и защиту
@@ -57,27 +57,166 @@ class Boss(Example):
 
     def defallTown(self):
         for t in self.player_towns:
-            name=t.name
-            roads=self.map_graph[name]
-            self.defTown(t,self.poiskUnitsOnAtack(roads))
+            name = t.name
+            roads = self.map_graph[name]
+            self.defTown(t, roads)
 
     def defTown(self, town, roads):
-        pass
-        #for r in roads:
-           # sim(9)
+        self.unitInTown=town.units
+        for road in roads:
+            enemyUnit=self.poiskUnitsOnAtack(road)
+            myUnit=self.poiskUnitsOnDef(road)
+            if(len(enemyUnit)>0):
+                if(self.simBoy(myUnit, enemyUnit, town.name)==0):
+                    budget = self.ozenkaAtak(enemyUnit) - self.ozenkaAtak(myUnit)
+                    self.randomSeach(myUnit, enemyUnit, budget, town)
 
-    def poiskUnitsOnAtack(self, roads):
-        rez={}
-        for i in roads:
-            rez[i]=[]
+    def randomSeach(self, myUnit, enemyUnit, budget, town):
+        #находишь оптимальные действия, закидываешь в улучшение
+        t=time.time()*1000
+        maxDef=self.maxDef(enemyUnit)
+        budget=min(town.coins, budget)
+        s=[]
+        if(len(self.unitInTown)==0):
+            self.createUnit(town)
+            return
+        newUnitName = self.unitInTown[-1]
+        while(time.time()*1000<t+200):
+            myUnit2=myUnit.copy()
+            defence=random.randint(0,maxDef)
+            hp=4*random.randint(0,budget-defence)+4
+            atk=random.randint(0, budget-defence-hp)
+            myUnit2.append(unit_data.a(hp, defence, atk, town.name))
+            a=self.simBoy(myUnit2, enemyUnit, town)
+            if(a==2):
+                self.upUnit(newUnitName, 'atk', atk)
+                self.upUnit(newUnitName, 'max_hp', hp)
+                self.upUnit(newUnitName, 'def', defence)
+                s=[]
+                break
+            elif(a==1):
+                s=[]
+                s.append(atk)
+                s.append(hp)
+                s.append(defence)
+        if(len(s)>0):
+            self.upUnit(newUnitName, 'atk', s[0])
+            self.upUnit(newUnitName, 'max_hp', s[1])
+            self.upUnit(newUnitName, 'def', s[2])
+
+
+    def createUnit(self, town, unitName):
+        self.rez.append(('equip', town, unitName))
+
+    def simBoy(self, playUnits1: list, playUnits2: list,
+               townName):  # 2 - полная победа 1 - победа при моём 1 ходе,0 - поражение
+        rez = 0
+        road = self.map_graph[playUnits2[0].location]
+        units1 = playUnits1.copy()
+        units2 = playUnits2.copy()
+        myStartPosition = 0
+        myPer = 1
+        protPer=road['lenght']
+        if (townName == road['finish_town']):
+            myStartPosition = road['lenght']
+            myPer = -1
+            protPer=0
+
+        while (len(units1) > 0 and len(units2) > 0):
+            for unit in units1:
+                segment2 = myStartPosition
+                if (unit.location.count('r') == 1):
+                    segment2 = unit.segment + myPer
+                per = True
+                for i in range(len(units2)):
+                    if units2[i].segment == segment2:
+                        per = False
+                        units2[i].hp -= unit.atk
+                        if (units2[i].hp <= 0):
+                            playUnits2.pop(i)
+                        break
+                if per:
+                    unit.segment = segment2
+
+            for unit in units2:
+                segment2 = unit.segment + protPer
+                per = True
+                for i in range(len(units1)):
+                    if units1[i].segment == segment2:
+                        per = False
+                        units1[i].hp -= unit.atk
+                        if (units1[i].hp <= 0):
+                            playUnits2.pop(i)
+                        break
+                if per:
+                    unit.segment = segment2
+
+        if (len(units1) > 0):
+            rez += 1
+
+        while (len(units1) > 0 and len(units2) > 0):
+            for unit in units2:
+                segment2 = unit.segment + protPer
+                per = True
+                for i in range(len(units1)):
+                    if units1[i].segment == segment2:
+                        per = False
+                        units1[i].hp -= unit.atk
+                        if (units1[i].hp <= 0):
+                            playUnits2.pop(i)
+                        break
+                if per:
+                    unit.segment = segment2
+
+            for unit in units1:
+                segment2 = myStartPosition
+                if (unit.location.count('r') == 1):
+                    segment2 = unit.segment + myPer
+                per = True
+                for i in range(len(units2)):
+                    if units2[i].segment == segment2:
+                        per = False
+                        units2[i].hp -= unit.atk
+                        if (units2[i].hp <= 0):
+                            playUnits2.pop(i)
+                        break
+                if per:
+                    unit.segment = segment2
+
+        if (len(units1) > 0):
+            rez += 1
+
+        return rez
+
+    def maxDef(self, units):
+        maxAtk=1
+        for unit in units:
+            maxAtk=max(maxAtk, unit.atk)
+        return maxAtk-1
+    def ozenkaAtak(self, units):
+        rez=0
+        for unit in units:
+            rez+=2
+            rez+=unit.atk-1
+            rez += unit.hp//4 - 1
+            rez += unit.defense
+        return rez
+
+    def poiskUnitsOnAtack(self, road):
+        rez = []
         for u in self.enemy_units:
-            if u.location in roads:
-                rez[u.location].append(u)
+            if u.location in road:
+                rez.append(u)
+        return rez
+    def poiskUnitsOnDef(self, road):
+        rez = []
+        for u in self.player_units:
+            if u.location in road:
+                rez.append(u)
         return rez
 
     def stadiaR(self, inp):
         townsNearbady = []
-        logging.warning(inp['player_towns'])
         for u in inp['player_units']:
             loc = inp['player_units'][u]['location']
             a = True
@@ -88,6 +227,7 @@ class Boss(Example):
 
             if (a and loc.count('t') == 1):
                 self.zashvatTown(u)
+        self.defallTown()
 
         for t in inp['player_towns']:
             townsNearbady += self.townNearby(t)
@@ -223,4 +363,5 @@ class Boss(Example):
     def zashvatTown(self, unit):
         self.rez.append(('capture', unit))
 
-    # общие методы
+#if __name__=='__main__':
+
