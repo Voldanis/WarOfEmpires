@@ -1,3 +1,4 @@
+from classes.standart import unit
 class UnitData:
     def __init__(self, unit, segment, player):
         self.name = unit.name
@@ -11,7 +12,7 @@ class UnitData:
             self.max_hp = unit.max_hp
             self.is_moved = unit.is_moved
 
-    def __init__(self, hp, defence, atk, location):
+    def init2(self, hp, defence, atk, location):
         self.name = 'aaa'
         self.location = location
         self.segment = None
@@ -19,3 +20,11 @@ class UnitData:
         self.hp = hp
         self.atk = atk
         self.defense = defence
+
+
+def new(hp, defence, atk, location):
+    u=unit.Unit("a",'a', location)
+    unit.atk=atk
+    unit.defense=defence
+    unit.hp=hp
+    return UnitData(u,None,'aa')

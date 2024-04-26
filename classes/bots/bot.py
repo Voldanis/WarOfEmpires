@@ -1,3 +1,6 @@
+from classes.bots.example import Example
+
+
 class Bot(Example):
     def __init__(self, map_graph):
         super().__init__(map_graph)
