@@ -22,7 +22,7 @@ class Boss(Example):
         self.name = 'LoseBoss'
         self.unitInTown = []
 
-    def genMaps(self):
+    def genMap(self):
         rez = {}
         a = {}
         for i in self.player_towns:
@@ -48,7 +48,7 @@ class Boss(Example):
         self.enemy_towns = enemy_towns
         self.player_units = client_units
         self.enemy_units = enemy_units
-        inp = self.genMaps()
+        inp = self.genMap()
         self.inp = inp
         self.rez = []
         a = ''
@@ -57,9 +57,9 @@ class Boss(Example):
             a += " "
         logging.warning(a)
         # есть 2 стадии игры: разведка и деф/атак, пока пишу разведку и защиту
-        return self.stadiaR(inp)
+        return self.gameFunction(inp)
 
-    def defallTown(self):
+    def defAllTown(self):
         for t in self.player_towns:
             name = t.name
             roads = self.map_graph[name]
@@ -71,60 +71,30 @@ class Boss(Example):
             self.unitInTown = []
         self.town = town
         for road in roads:
-            enemyUnit = self.poiskUnitsOnAtack(road)
-            myUnit = self.poiskUnitsOnDef(road)
+            enemyUnit = self.poiskUnitsOfAtack(road)
+            myUnit = self.poiskUnitsFromDef(road)
             if len(enemyUnit) > 0:
-                budget = self.ozenkaAtak(enemyUnit) - self.ozenkaAtak(myUnit)
-                self.randomSeach(myUnit, enemyUnit, budget, road)
+                if (self.simulyBoy(myUnit, enemyUnit, self.town.name) == 0):
+                    budget = self.ozenkaAtak(enemyUnit) - self.ozenkaAtak(myUnit)
+                    self.randomSeach(myUnit, enemyUnit, budget, road)
 
-    def createUsersIsUsers_data(self, unitsInp):
+    def createUsersFromUsers_data(self, unitsInp):
         rez = []
         for i in unitsInp:
             rez.append(User(i.hp, i.defense, i.atk, i.location, i.segment, i.finish_town))
         return rez
-
-    def randomSeach(self, myUnit, enemyUnit, budget, road):
-        # находишь оптимальные действия, закидываешь в улучшение
-        t = time.time() * 1000
-        enemyUnit = self.createUsersIsUsers_data(enemyUnit)
-        myUnit = self.createUsersIsUsers_data(myUnit)
-        maxDef = self.maxDef(enemyUnit)
-
-        s = []
-        if len(self.unitInTown) == 0:
-            self.createUnit(self.town.name)
-            self.town.coins -= 2
-            return
-
-        newUnitName = self.unitInTown[0]
-        self.unitInTown.pop(0)
-
-        while t + 50 < time.time() * 1000:
-            myUnit2 = myUnit.copy()
-            defence = random.randint(0, maxDef)
-            budget -= defence
-            if budget < 0:
-                budget = 0
-            hp = 4 * random.randint(0, budget) + 4
-            budget -= hp
-            if budget < 0:
-                budget = 0
-            atk = random.randint(0, budget)
-            myUnit2.append(User(hp, defence, atk, self.town.name))
-            a = self.simBoy(myUnit2, enemyUnit, self.town)
-            if a == 1:
-                self.upUnit(newUnitName, 'atk', atk)
-                self.upUnit(newUnitName, 'max_hp', hp)
-                self.upUnit(newUnitName, 'def', defence)
-                self.otprInRoad(newUnitName, road)
-                self.town.coins -= atk + hp + defence
-                return
 
     def maxDef(self, units):
         maxAtk = 1
         for unit in units:
             maxAtk = max(maxAtk, unit.atk)
         return maxAtk - 1
+
+    def maxAtk(self, units):
+        maxHp = 1
+        for unit in units:
+            maxHp = max(maxHp, unit.hp)
+        return maxHp
 
     def ozenkaAtak(self, units):
         rez = 0
@@ -135,23 +105,23 @@ class Boss(Example):
             rez += unit.defense
         return rez
 
-    def poiskUnitsOnAtack(self, road):
+    def poiskUnitsOfAtack(self, road):
         rez = []
         for u in self.enemy_units:
             if u.location == road:
                 rez.append(u)
         return rez
 
-    def poiskUnitsOnDef(self, road):
+    def poiskUnitsFromDef(self, road):
         rez = []
         for u in self.player_units:
             if u.location == road:
                 rez.append(u)
         return rez
 
-    def stadiaR(self, inp):
+    def gameFunction(self, inp):
         townsNearbady = []
-        self.defallTown()
+        self.defAllTown()
         for u in inp['player_units']:
             loc = inp['player_units'][u]['location']
             a = True
@@ -165,15 +135,15 @@ class Boss(Example):
         for t in inp['player_towns']:
             townsNearbady += self.townNearby(t)
         townsNearbady = self.toDel(townsNearbady, self.unitMoveInTown(inp))
-        townsNearbady = self.toDel(townsNearbady, self.shuisFast(inp))
-        townsNearbady = self.toDel(townsNearbady, self.muTowns())
+        townsNearbady = self.toDel(townsNearbady, self.isEnemyTown(inp))
+        townsNearbady = self.toDel(townsNearbady, self.myTowns())
 
         for town in inp['player_towns']:
-            townsR = self.peresechenie(self.townNearby(town), townsNearbady)
-            townsR = self.sortMasTown(townsR, town)
+            townsR = self.sumSlov(self.townNearby(town), townsNearbady)
+            townsR = self.sortTowns(townsR, town)
 
             for t in townsR:
-                u = self.ifUnitintiwn(inp, town)
+                u = self.ifUnitIsWin(inp, town)
                 if u != 'a':
                     self.otprInTown(u, t)
                     self.unitMove.append(u)
@@ -183,15 +153,16 @@ class Boss(Example):
 
         for t in inp['player_towns']:
             self.upTown(t)
+
         return self.rez
 
-    def muTowns(self):
+    def myTowns(self):
         rez = []
         for i in self.inp['player_towns']:
             rez.append(i)
         return rez
 
-    def sortMasTown(self, inpTownNear, town):
+    def sortTowns(self, inpTownNear, town):
         a = {}
         for t1 in inpTownNear:
             r1 = self.map_graph[t1]
@@ -207,14 +178,14 @@ class Boss(Example):
             rez.append(i)
         return rez
 
-    def ifUnitintiwn(self, inp, town):
+    def ifUnitIsWin(self, inp, town):
         for i in inp['player_units']:
             if inp['player_units'][i]['location'] == town and inp['player_units'][i]['is_moved'] == False:
                 if i not in self.unitMove:
                     return i
         return 'a'
 
-    def peresechenie(self, mas1, mas2):
+    def sumSlov(self, mas1, mas2):
         rez = []
         for i in mas1:
             for j in mas2:
@@ -251,7 +222,7 @@ class Boss(Example):
                     rez.append(loc)
         return rez
 
-    def shuisFast(self, inp):
+    def isEnemyTown(self, inp):
         rez = []
         for i in inp['enemy_towns']:
             rez.append(i)
@@ -299,8 +270,8 @@ class Boss(Example):
     def zashvatTown(self, unit):
         self.rez.append(('capture', unit))
 
-    def simBoy(self, myUnit: list, enemyUnit: list,
-               townName):  # 2 - полная победа 1 - победа при моём 1 ходе,0 - поражение
+    def simulyBoy(self, myUnit: list, enemyUnit: list,
+                  townName):  # 2 - полная победа 1 - победа при моём 1 ходе,0 - поражение
         rez = 0
         road = self.map_graph[enemyUnit[0].location]
         r = enemyUnit[0].location
@@ -358,6 +329,45 @@ class Boss(Example):
         if len(myUnit) > 0:
             rez += 1
         return rez
+
+    def randomSeach(self, myUnit, enemyUnit, budget, road):
+        # находишь оптимальные действия, закидываешь в улучшение
+        t = time.time() * 1000
+        enemyUnit = self.createUsersFromUsers_data(enemyUnit)
+        myUnit = self.createUsersFromUsers_data(myUnit)
+        maxDef = self.maxDef(enemyUnit)
+
+        if len(self.unitInTown) == 0:
+            self.createUnit(self.town.name)
+            self.town.coins -= 2
+            return
+
+        newUnitName = self.unitInTown[0]
+        self.unitInTown.pop(0)
+        while t + 50 > time.time() * 1000:
+            myUnit2 = myUnit.copy()
+            defence = random.randint(0, maxDef)
+            budget -= defence
+            if budget < 0:
+                budget = 0
+            atk = random.randint(0, self.maxAtk(enemyUnit))
+            if atk % 2 == 1:
+                budget -= atk
+                atk += 1
+            else:
+                budget -= atk - 1
+
+            hp = 4 * budget + 4
+            print(hp, defence, atk)
+            myUnit2.append(User(hp, defence, atk, self.town.name))
+            a = self.simulyBoy(myUnit2, enemyUnit, self.town.name)
+            if a == 1:
+                self.upUnit(newUnitName, 'atk', atk)
+                self.upUnit(newUnitName, 'max_hp', hp)
+                self.upUnit(newUnitName, 'def', defence)
+                self.otprInRoad(newUnitName, road)
+                self.town.coins -= atk + hp + defence
+                return
 
 
 class User:
