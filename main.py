@@ -2,7 +2,6 @@ import time
 import random
 import multiprocessing
 import pygame
-
 from bots.boss import Boss
 from bots.bot import Bot
 from classes.town import Town
@@ -100,12 +99,15 @@ class Server:
         screen.fill('#B5E51D')
         running = True
         flag = True
-        clock = pygame.time.Clock()
+        clock = 0
         while running:
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if 590 < event.pos[0] < 670 and 450 < event.pos[1] < 490:
+                        clock += 1
             if score1 < self.win_score and score2 < self.win_score and day < 100:
                 print('--------------------------')
                 print('day', day)
@@ -120,7 +122,12 @@ class Server:
                 for t in self.p2.towns:
                     score2 += self.map_graph[t].coins
                     score2 += self.map_graph[t].level * 10000
-
+                # pygame.draw.rect(screen, (0, 0, 0), (590, 450, 80, 40))
+                font = pygame.font.Font(None, 50)
+                text = font.render("0.5x", True, (255, 255, 255))
+                text_x = 630 - text.get_width() // 2
+                text_y = 470 - text.get_height() // 2
+                screen.blit(text, (text_x, text_y))
                 for i in range(len(castels)):
                     if self.map_graph[f't{i}'].empire == 1:
                         castels[i][2] = '#ED1B24'
@@ -146,18 +153,18 @@ class Server:
                                 ln = len(self.map_graph[self.units[i].location].segments)
                                 if self.units[i].finish_town == num_roads[self.units[i].location][2]:
                                     if num_roads[self.units[i].location][0] in ways_coords_ver:
-                                        x = num_roads[self.units[i].location][0][0] + 20
-                                        y = num_roads[self.units[i].location][0][1] + 100 // ln * (j + 1)
+                                        x = num_roads[self.units[i].location][0][0] + 20 - 12
+                                        y = num_roads[self.units[i].location][0][1] + 100 // ln * j
                                     else:
-                                        y = num_roads[self.units[i].location][0][1] + 20
-                                        x = num_roads[self.units[i].location][0][0] + 180 // ln * (j + 1)
+                                        y = num_roads[self.units[i].location][0][1] + 20 - 12
+                                        x = num_roads[self.units[i].location][0][0] + 180 // ln * j
                                 else:
                                     if num_roads[self.units[i].location][0] in ways_coords_ver:
-                                        x = num_roads[self.units[i].location][0][0] + 20
-                                        y = num_roads[self.units[i].location][0][1] + 100 - 100 // ln * (ln - j + 1)
+                                        x = num_roads[self.units[i].location][0][0] + 22
+                                        y = num_roads[self.units[i].location][0][1] + 100 - 100 // ln * (ln - j)
                                     else:
-                                        y = num_roads[self.units[i].location][0][1] + 20
-                                        x = num_roads[self.units[i].location][0][0] + 180 - 180 // ln * (ln - j + 1)
+                                        y = num_roads[self.units[i].location][0][1] + 22
+                                        x = num_roads[self.units[i].location][0][0] + 180 - 180 // ln * (ln - j)
                                 pygame.draw.rect(screen, '#3F47CC', (x, y, 10, 10))
                 for i in self.p1.units:
                     if self.units[i].location[0] == 'r':
@@ -167,17 +174,17 @@ class Server:
                                 if self.units[i].finish_town == num_roads[self.units[i].location][2]:
                                     if num_roads[self.units[i].location][0] in ways_coords_ver:
                                         x = num_roads[self.units[i].location][0][0] + 20
-                                        y = num_roads[self.units[i].location][0][1] + 100 // ln * (j + 1)
+                                        y = num_roads[self.units[i].location][0][1] + 100 // ln * j
                                     else:
                                         y = num_roads[self.units[i].location][0][1] + 20
-                                        x = num_roads[self.units[i].location][0][0] + 180 // ln * (j + 1)
+                                        x = num_roads[self.units[i].location][0][0] + 180 // ln * j
                                 else:
                                     if num_roads[self.units[i].location][0] in ways_coords_ver:
                                         x = num_roads[self.units[i].location][0][0] + 20
-                                        y = num_roads[self.units[i].location][0][1] + 100 - 100 // ln * (ln - j + 1)
+                                        y = num_roads[self.units[i].location][0][1] + 100 - 100 // ln * (ln - j)
                                     else:
                                         y = num_roads[self.units[i].location][0][1] + 20
-                                        x = num_roads[self.units[i].location][0][0] + 180 - 180 // ln * (ln - j + 1)
+                                        x = num_roads[self.units[i].location][0][0] + 180 - 180 // ln * (ln - j)
                                 pygame.draw.rect(screen, '#ED1B24', (x, y, 10, 10))
             else:
                 if flag == True:
@@ -190,8 +197,9 @@ class Server:
                     print(self.p1.bot.name, 'score:', score1)
                     print(self.p2.bot.name, 'score:', score2)
                     flag = False
+            time.sleep(clock)
             pygame.display.flip()
-            # clock.tick(2)
+
         pygame.quit()
 
     def process_player(self, client, enemy):
