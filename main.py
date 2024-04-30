@@ -1,8 +1,3 @@
-import time
-import random
-import multiprocessing
-#import pygame
-
 from classes.bots.boss import Boss
 from classes.bots.bot import Bot
 from classes.standart.town import Town
@@ -83,7 +78,7 @@ class Server:
         day = 0
         score1 = 0
         score2 = 0
-        #pygame.init()
+        pygame.init()
         castels = [[120, 80, '#EFE3AF'], [420, 80, '#EFE3AF'], [720, 80, '#EFE3AF'], [1020, 80, '#3F47CC'],
                     [120, 300, '#EFE3AF'], [420, 300, '#EFE3AF'], [720, 300, '#EFE3AF'], [1020, 300, '#EFE3AF'],
                     [120, 520, '#ED1B24'], [420, 520, '#EFE3AF'], [720, 520, '#EFE3AF'], [1020, 520, '#EFE3AF']]
@@ -101,12 +96,12 @@ class Server:
                      'r12': (ways_coords_ver[6], 't6', 't10'), 'r13': (ways_coords_ver[7], 't7', 't8'),
                      'r14': (ways_coords_gor[6], 't8', 't9'), 'r15': (ways_coords_gor[7], 't9', 't10'),
                      'r16': (ways_coords_gor[8], 't10', 't11')}
-        '''screen = pygame.display.set_mode((1280, 708))
-        screen.fill('#B5E51D')'''
+        screen = pygame.display.set_mode((1280, 708))
+        screen.fill('#B5E51D')
         running = True
         flag = True
         clock = 0
-        while score1 < self.win_score and score2 < self.win_score and day < 100:
+        '''while score1 < self.win_score and score2 < self.win_score and day < 100:
             print('--------------------------')
             print('day', day)
             self.process_player(self.p1, self.p2)
@@ -128,7 +123,8 @@ class Server:
             print('draw!')
         print(self.p1.bot.name, 'score:', score1)
         print(self.p2.bot.name, 'score:', score2)
-        '''while running:
+        '''
+        while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -149,7 +145,7 @@ class Server:
                 for t in self.p2.towns:
                     score2 += self.map_graph[t].coins
                     score2 += self.map_graph[t].level * 10000
-                # pygame.draw.rect(screen, (0, 0, 0), (590, 450, 80, 40))
+                pygame.draw.rect(screen, (0, 0, 0), (590, 450, 80, 40))
                 font = pygame.font.Font(None, 50)
                 text = font.render("0.5x", True, (255, 255, 255))
                 text_x = 630 - text.get_width() // 2
@@ -227,15 +223,14 @@ class Server:
             time.sleep(clock)
             pygame.display.flip()
 
-        pygame.quit()'''
-
+        pygame.quit()
 
     def process_player(self, client, enemy):
         self.process_beginning_move(client)
         self.requests['requests'] = []
         p = multiprocessing.Process(target=self.get_client_requests, args=(client, enemy, self.requests))
         p.start()
-        p.join(0.15)  # 0.15 -> 0.1 задержка
+        p.join(0.16)  # 0.16 -> 0.1 задержка
         if p.is_alive():
             p.terminate()
             print(client.bot.name + ' is too slow')
@@ -501,6 +496,11 @@ class Server:
 
 
 if __name__ == "__main__":
+    import time
+    import random
+    import multiprocessing
+    import pygame
+
     random.seed(a=835995859)
     server = Server()
     server.run()
