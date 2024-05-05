@@ -1,14 +1,3 @@
-import os
-import sys
-import time
-import random
-import multiprocessing
-import pygame
-from classes.bots.boss import Boss
-from classes.bots.bot import Bot
-from classes.standart.town import Town
-from classes.standart.road import Road
-from classes.standart.player import Player
 from classes.reports.town_data import TownData
 from classes.reports.unit_data import UnitData
 
@@ -513,10 +502,17 @@ class Server:
 
 
 if __name__ == "__main__":
+    import os
+    import sys
     import time
     import random
     import multiprocessing
     import pygame
+    from classes.bots.boss import Boss
+    from classes.bots.bot import Bot
+    from classes.standart.town import Town
+    from classes.standart.road import Road
+    from classes.standart.player import Player
 
     random.seed(a=835995859)
     server = Server()
