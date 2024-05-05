@@ -73,7 +73,7 @@ class Server:
             self.p2 = Player(Boss(map_graph), 2, {'t3'})
 
     def load_image(self, name, colorkey=None):
-        fullname = os.path.join('data', name)
+        fullname = os.path.join('classes/images', name)
         # если файл не существует, то выходим
         if not os.path.isfile(fullname):
             print(f"Файл с изображением '{fullname}' не найден")
@@ -136,7 +136,6 @@ class Server:
         running = True
         flag = True
         clock = 0
-        slowing_down = 0.5
         xy = ((-18, -6), (-21, -18), (-9, -30), (3, -18), (-1, -6))
         while running:
             for event in pygame.event.get():
@@ -145,7 +144,6 @@ class Server:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if 557 < event.pos[0] < 623 and 473 < event.pos[1] < 507:
                         clock += 1
-                        slowing_down /= 2
             if self.score1 < self.win_score and self.score2 < self.win_score and self.day < 100:
                 screen.fill('#B5E51D')
                 self.bot_processing()
@@ -174,7 +172,7 @@ class Server:
                             sprite.rect.y = circles_segments[str(num_roads[i][0])][j][1] + xy[v][1]
                             all_sprites.add(sprite)
                 font = pygame.font.Font(None, 50)
-                text = font.render(f"{slowing_down}x", True, (255, 255, 255))
+                text = font.render("0.5x", True, (255, 255, 255))
                 text_x = screen.get_width() // 2 - text.get_width() // 2
                 text_y = 490 - text.get_height() // 2
                 screen.blit(text, (text_x, text_y))
@@ -236,6 +234,7 @@ class Server:
     def process_player(self, client, enemy):
         self.process_beginning_move(client)
         self.requests['requests'] = []
+        self.requests['bot'] = None
         p = multiprocessing.Process(target=self.get_client_requests, args=(client, enemy, self.requests))
         p.start()
         p.join(0.16)  # 0.16 -> 0.1 задержка
@@ -243,6 +242,8 @@ class Server:
             p.terminate()
             print(client.bot.name + ' is too slow')
 
+        if not (self.requests['bot'] is None):
+            client.bot = self.requests['bot']
         if type(self.requests['requests']) == list:
             for req in self.requests['requests']:
                 print(req)
@@ -279,6 +280,7 @@ class Server:
         try:
             cv, ev, cu, eu = self.report(client, enemy)
             return_val['requests'] = client.bot.move(cv, ev, cu, eu)
+            return_val['bot'] = client.bot
         except Exception as what:
             print(client.bot.name, 'error:', what)
 
