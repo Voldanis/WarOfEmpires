@@ -26,6 +26,9 @@ class Server:
         self.win_score = 600000
         self.p1 = None
         self.p2 = None
+        self.day = 0
+        self.score1 = 0
+        self.score2 = 0
         self.identify_players()
 
     def generate_map(self):
@@ -84,19 +87,31 @@ class Server:
         image = pygame.image.load(fullname)
         return image
 
+    def bot_processing(self):
+        print('--------------------------')
+        print('day', self.day)
+        self.process_player(self.p1, self.p2)
+        self.process_player(self.p2, self.p1)
+        self.day += 1
+        self.score1 = 0
+        for t in self.p1.towns:
+            self.score1 += self.map_graph[t].coins
+            self.score1 += self.map_graph[t].level * 10000
+        self.score2 = 0
+        for t in self.p2.towns:
+            self.score2 += self.map_graph[t].coins
+            self.score2 += self.map_graph[t].level * 10000
+
     def run(self):
-        day = 0
-        score1 = 0
-        score2 = 0
         pygame.init()
         castels = [[120, 24, '#EFE3AF'], [400, 24, '#EFE3AF'], [680, 24, '#EFE3AF'], [960, 24, '#3F47CC'],
                     [120, 304, '#EFE3AF'], [400, 304, '#EFE3AF'], [680, 304, '#EFE3AF'], [960, 304, '#EFE3AF'],
                     [120, 584, '#ED1B24'], [400, 584, '#EFE3AF'], [680, 584, '#EFE3AF'], [960, 584, '#EFE3AF']]
-        ways_coords_gor = [[220, 54], [500, 54], [780, 54],
-                           [220, 334], [500, 334], [780, 334],
-                           [220, 614], [500, 614], [780, 614]]
-        ways_coords_ver = [[150, 124], [430, 124], [710, 124], [990, 124],
-                           [150, 404], [430, 404], [710, 404], [990, 404]]
+        ways_coords_gor = [[220, 54, 'r0'], [500, 54, 'r1'], [780, 54, 'r2'],
+                           [220, 334, 'r7'], [500, 334, 'r8'], [780, 334, 'r9'],
+                           [220, 614, 'r14'], [500, 614, 'r15'], [780, 614, 'r16']]
+        ways_coords_ver = [[150, 124, 'r3'], [430, 124, 'r4'], [710, 124, 'r5'], [990, 124, 'r6'],
+                           [150, 404, 'r10'], [430, 404, 'r11'], [710, 404, 'r12'], [990, 404, 'r13']]
         num_roads = {'r0': [ways_coords_gor[0], 't0', 't1', True], 'r1': [ways_coords_gor[1], 't1', 't2', True],
                      'r2': [ways_coords_gor[2], 't2', 't3', True], 'r3': [ways_coords_ver[0], 't0', 't4', False],
                      'r4': [ways_coords_ver[1], 't1', 't5', False], 'r5': [ways_coords_ver[2], 't2', 't6', False],
@@ -107,8 +122,10 @@ class Server:
                      'r14': [ways_coords_gor[6], 't8', 't9', True], 'r15': [ways_coords_gor[7], 't9', 't10', True],
                      'r16': [ways_coords_gor[8], 't10', 't11', True]}
         circles_segments = {}
+        sprites_levels = {7: 'lvl7 (1).png', 6: 'lvl6 (1).png', 5: 'lvl5 (1).png',
+                          4: 'lvl4 (1).png', 3: 'lvl3 (1).png', 2: 'lvl2 (1).png',
+                          1: 'lvl1 (1).png', 0: 'lvl0 (1).png'}
         for i in num_roads.keys():
-            # a = self.map_graph[i].length
             circles = []
             if num_roads[i][3]:
                 segment = 180 // self.map_graph[i].length
@@ -121,61 +138,50 @@ class Server:
                 for j in range(self.map_graph[i].length):
                     circles.append((x, num_roads[i][0][1] + (j + 1) * segment - segment // 2))
             circles_segments[str(num_roads[i][0])] = circles
-        # print(num_roads)
         screen = pygame.display.set_mode((1180, 708))
         running = True
         flag = True
         clock = 0
         xy = ((-18, -6), (-21, -18), (-9, -30), (3, -18), (-1, -6))
         while running:
-            screen.fill('#B5E51D')
-            all_sprites = pygame.sprite.Group()
-            for i in num_roads.keys():
-                for j in range(len(self.map_graph[i].segments)):
-                    if len(self.map_graph[i].segments[j]) <= 5:
-                        for v in range(len(self.map_graph[i].segments[j])):
-                            sprite = pygame.sprite.Sprite()
-                            sprite.image = self.load_image('lvl0 (2).png')
-                            sprite.rect = sprite.image.get_rect()
-                            sprite.rect.x = circles_segments[str(num_roads[i][0])][j][0] + xy[v][0]
-                            sprite.rect.y = circles_segments[str(num_roads[i][0])][j][1] + xy[v][1]
-                            all_sprites.add(sprite)
-                    # else:
-                    #     for v in range(len(j)):
-                    #         sprite = pygame.sprite.Sprite()
-                    #         sprite.image = self.load_image('lvl0 (2).png')
-                    #         sprite.rect = sprite.image.get_rect()
-                    #         sprite.rect.x = xy[i][0]
-                    #         sprite.rect.y = xy[i][1]
-                    #         all_sprites.add(sprite)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    if 590 < event.pos[0] < 670 and 450 < event.pos[1] < 490: # подкорректировать
+                    if 557 < event.pos[0] < 623 and 473 < event.pos[1] < 507:
                         clock += 1
-            if score1 < self.win_score and score2 < self.win_score and day < 100:
-                print('--------------------------')
-                print('day', day)
-                self.process_player(self.p1, self.p2)
-                self.process_player(self.p2, self.p1)
-                day += 1
-                score1 = 0
-                for t in self.p1.towns:
-                    score1 += self.map_graph[t].coins
-                    score1 += self.map_graph[t].level * 10000
-                score2 = 0
-                for t in self.p2.towns:
-                    score2 += self.map_graph[t].coins
-                    score2 += self.map_graph[t].level * 10000
-                # pygame.draw.rect(screen, (0, 0, 0), (590, 450, 80, 40))
+            if self.score1 < self.win_score and self.score2 < self.win_score and self.day < 100:
+                screen.fill('#B5E51D')
+                self.bot_processing()
+                all_sprites = pygame.sprite.Group()
+                image = None
+                player = None
+                for i in num_roads.keys():
+                    for j in range(len(self.map_graph[i].segments)):
+                        if self.map_graph[i].segments[j]:
+                            if self.units[self.map_graph[i].segments[j][0]].empire == 2:
+                                player = 'p2'
+                            else:
+                                player = 'p1'
+                        num_unist_on_segment = 5
+                        if len(self.map_graph[i].segments[j]) < 5:
+                            num_unist_on_segment = len(self.map_graph[i].segments[j])
+                        for v in range(num_unist_on_segment):
+                            sprite = pygame.sprite.Sprite()
+                            for key_img in sprites_levels.keys():
+                                if self.units[self.map_graph[i].segments[j][v]].defense >= key_img:
+                                    image = sprites_levels[key_img]
+                                    break
+                            sprite.image = self.load_image(player + '/' + image)
+                            sprite.rect = sprite.image.get_rect()
+                            sprite.rect.x = circles_segments[str(num_roads[i][0])][j][0] + xy[v][0]
+                            sprite.rect.y = circles_segments[str(num_roads[i][0])][j][1] + xy[v][1]
+                            all_sprites.add(sprite)
                 font = pygame.font.Font(None, 50)
                 text = font.render("0.5x", True, (255, 255, 255))
                 text_x = screen.get_width() // 2 - text.get_width() // 2
                 text_y = 490 - text.get_height() // 2
                 screen.blit(text, (text_x, text_y))
-
-
                 for i in range(len(castels)):
                     if self.map_graph[f't{i}'].empire == 1:
                         castels[i][2] = '#ED1B24'
@@ -190,74 +196,44 @@ class Server:
                     text_x = castels[i][0] + text.get_width() // 2
                     text_y = castels[i][1] + text.get_height() // 2
                     screen.blit(text, (text_x, text_y))
-
-
                     if i < len(ways_coords_gor):
                         pygame.draw.rect(screen, '#FFC90D', (ways_coords_gor[i][0], ways_coords_gor[i][1], 180, 40))
-                        for v in circles_segments[str(ways_coords_gor[i])]:
+                        for n, v in enumerate(circles_segments[str(ways_coords_gor[i])]):
                             x, y = v[0], v[1]
                             pygame.draw.circle(screen, (255, 255, 255), (x, y), 20, width=13)
+                            if len(self.map_graph[ways_coords_gor[i][2]].segments[n]) > 5:
+                                text = font.render("+", True, '#FFFFFF')
+                                text1 = font.render(f"{len(self.map_graph[ways_coords_gor[i][2]].segments[n]) - 5}", True, '#FFFFFF')
+                                text_x = x - text.get_width() // 2
+                                text_y = y + 10 + text.get_height() // 2
+                                text_x1 = x - text1.get_width() // 2
+                                text_y1 = y + 10 + text1.get_height() // 2 + text.get_height()
+                                screen.blit(text, (text_x, text_y))
+                                screen.blit(text1, (text_x1, text_y1))
                     if i < len(ways_coords_ver):
                         pygame.draw.rect(screen, '#FFC90D', (ways_coords_ver[i][0], ways_coords_ver[i][1], 40, 180))
-                        for v in circles_segments[str(ways_coords_ver[i])]:
+                        for n, v in enumerate(circles_segments[str(ways_coords_ver[i])]):
                             x, y = v[0], v[1]
                             pygame.draw.circle(screen, (255, 255, 255), (x, y), 20, width=13)
-                #
-                # for i in self.p2.units:
-                #     if self.units[i].location[0] == 'r':
-                #         for j in range(len(self.map_graph[self.units[i].location].segments)):
-                #             if i in self.map_graph[self.units[i].location].segments[j]:
-                #                 ln = len(self.map_graph[self.units[i].location].segments)
-                #                 if self.units[i].finish_town == num_roads[self.units[i].location][2]:
-                #                     if num_roads[self.units[i].location][0] in ways_coords_ver:
-                #                         x = num_roads[self.units[i].location][0][0] + 20 - 12
-                #                         y = num_roads[self.units[i].location][0][1] + 180 // ln * j
-                #                     else:
-                #                         y = num_roads[self.units[i].location][0][1] + 20 - 12
-                #                         x = num_roads[self.units[i].location][0][0] + 180 // ln * j
-                #                 else:
-                #                     if num_roads[self.units[i].location][0] in ways_coords_ver:
-                #                         x = num_roads[self.units[i].location][0][0] + 22
-                #                         y = num_roads[self.units[i].location][0][1] + 100 - 180 // ln * (ln - j)
-                #                     else:
-                #                         y = num_roads[self.units[i].location][0][1] + 22
-                #                         x = num_roads[self.units[i].location][0][0] + 180 - 180 // ln * (ln - j)
-                #                 pygame.draw.rect(screen, '#3F47CC', (x, y, 5, 10))
-                # for i in self.p1.units:
-                #     if self.units[i].location[0] == 'r':
-                #         for j in range(len(self.map_graph[self.units[i].location].segments)):
-                #             if i in self.map_graph[self.units[i].location].segments[j]:
-                #                 ln = len(self.map_graph[self.units[i].location].segments)
-                #                 if self.units[i].finish_town == num_roads[self.units[i].location][2]:
-                #                     if num_roads[self.units[i].location][0] in ways_coords_ver:
-                #                         x = num_roads[self.units[i].location][0][0] + 20
-                #                         y = num_roads[self.units[i].location][0][1] + 180 // ln * j
-                #                     else:
-                #                         y = num_roads[self.units[i].location][0][1] + 20
-                #                         x = num_roads[self.units[i].location][0][0] + 180 // ln * j
-                #                 else:
-                #                     if num_roads[self.units[i].location][0] in ways_coords_ver:
-                #                         x = num_roads[self.units[i].location][0][0] + 20
-                #                         y = num_roads[self.units[i].location][0][1] + 100 - 180 // ln * (ln - j)
-                #                     else:
-                #                         y = num_roads[self.units[i].location][0][1] + 20
-                #                         x = num_roads[self.units[i].location][0][0] + 180 - 180 // ln * (ln - j)
-                #                 pygame.draw.rect(screen, '#ED1B24', (x, y, 10, 10))
+                            if len(self.map_graph[ways_coords_ver[i][2]].segments[n]) > 5:
+                                text = font.render(f"+ {len(self.map_graph[ways_coords_ver[i][2]].segments[n]) - 5}", True, '#FFFFFF')
+                                text_x = x + 10 + text.get_width() // 2
+                                text_y = y - text.get_height() // 2
+                                screen.blit(text, (text_x, text_y))
             else:
                 if flag == True:
-                    if score1 > score2:
+                    if self.score1 > self.score2:
                         print(self.p1.bot.name, 'wins!')
-                    elif score1 < score2:
+                    elif self.score1 < self.score2:
                         print(self.p2.bot.name, 'wins!')
                     else:
                         print('draw!')
-                    print(self.p1.bot.name, 'score:', score1)
-                    print(self.p2.bot.name, 'score:', score2)
+                    print(self.p1.bot.name, 'score:', self.score1)
+                    print(self.p2.bot.name, 'score:', self.score2)
                     flag = False
             all_sprites.draw(screen)
             time.sleep(clock)
             pygame.display.flip()
-
         pygame.quit()
 
     def process_player(self, client, enemy):
