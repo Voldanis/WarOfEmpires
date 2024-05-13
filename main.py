@@ -136,6 +136,7 @@ class Server:
         running = True
         flag = True
         clock = 0
+        slowing_down = 0.5
         xy = ((-18, -6), (-21, -18), (-9, -30), (3, -18), (-1, -6))
         while running:
             for event in pygame.event.get():
@@ -144,6 +145,14 @@ class Server:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if 557 < event.pos[0] < 623 and 473 < event.pos[1] < 507:
                         clock += 1
+                        slowing_down /= 2
+                    font = pygame.font.Font(None, 50)
+                    text = font.render(f"{slowing_down}x", True, (255, 255, 255))
+                    text_x = screen.get_width() // 2 - text.get_width() // 2
+                    text_y = 490 - text.get_height() // 2
+                    pygame.draw.rect(screen, '#B5E51D', (text_x, text_y, text.get_width(), text.get_height()))
+                    screen.blit(text, (text_x, text_y))
+                    pygame.display.flip()
             if self.score1 < self.win_score and self.score2 < self.win_score and self.day < 100:
                 screen.fill('#B5E51D')
                 self.bot_processing()
@@ -172,7 +181,7 @@ class Server:
                             sprite.rect.y = circles_segments[str(num_roads[i][0])][j][1] + xy[v][1]
                             all_sprites.add(sprite)
                 font = pygame.font.Font(None, 50)
-                text = font.render("0.5x", True, (255, 255, 255))
+                text = font.render(f"{slowing_down}x", True, (255, 255, 255))
                 text_x = screen.get_width() // 2 - text.get_width() // 2
                 text_y = 490 - text.get_height() // 2
                 screen.blit(text, (text_x, text_y))
