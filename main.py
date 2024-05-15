@@ -150,7 +150,6 @@ class Server:
                     screen.blit(text, (text_x, text_y))
                     pygame.display.flip()
             if self.score1 < self.win_score and self.score2 < self.win_score and self.day < 100:
-                screen.fill('#B5E51D')
                 self.bot_processing(screen)
             else:
                 if flag == True:
@@ -165,8 +164,83 @@ class Server:
                     flag = False
         pygame.quit()
 
+    def draw(self, screen):
+        screen.fill('#B5E51D')
+        all_sprites = pygame.sprite.Group()
+        image = None
+        player = None
+        for i in self.num_roads.keys():
+            for j in range(len(self.map_graph[i].segments)):
+                if self.map_graph[i].segments[j]:
+                    if self.units[self.map_graph[i].segments[j][0]].empire == 2:
+                        player = 'p2'
+                    else:
+                        player = 'p1'
+                num_unist_on_segment = 5
+                if len(self.map_graph[i].segments[j]) < 5:
+                    num_unist_on_segment = len(self.map_graph[i].segments[j])
+                for v in range(num_unist_on_segment):
+                    sprite = pygame.sprite.Sprite()
+                    for key_img in self.sprites_levels.keys():
+                        if self.units[self.map_graph[i].segments[j][v]].defense >= key_img:
+                            image = self.sprites_levels[key_img]
+                            break
+                    sprite.image = self.load_image(player + '/' + image)
+                    sprite.rect = sprite.image.get_rect()
+                    sprite.rect.x = self.circles_segments[str(self.num_roads[i][0])][j][0] + self.xy[v][0]
+                    sprite.rect.y = self.circles_segments[str(self.num_roads[i][0])][j][1] + self.xy[v][1]
+                    all_sprites.add(sprite)
+        font = pygame.font.Font(None, 50)
+        text = font.render(f"{self.slowing_down}x", True, (255, 255, 255))
+        text_x = screen.get_width() // 2 - text.get_width() // 2
+        text_y = 490 - text.get_height() // 2
+        screen.blit(text, (text_x, text_y))
+        for i in range(len(self.castels)):
+            if self.map_graph[f't{i}'].empire == 1:
+                self.castels[i][2] = '#ED1B24'
+            elif self.map_graph[f't{i}'].empire == 2:
+                self.castels[i][2] = '#3F47CC'
+            else:
+                self.castels[i][2] = '#EFE3AF'
+            pygame.draw.rect(screen, self.castels[i][2],
+                             (self.castels[i][0], self.castels[i][1], 100, 100))
+            font = pygame.font.Font(None, 32)
+            text = font.render(f"{len(self.map_graph[f't{i}'].units)}", True, '#EFE3AF')
+            text_x = self.castels[i][0] + text.get_width() // 2
+            text_y = self.castels[i][1] + text.get_height() // 2
+            screen.blit(text, (text_x, text_y))
+            if i < len(self.ways_coords_gor):
+                pygame.draw.rect(screen, '#FFC90D', (self.ways_coords_gor[i][0], self.ways_coords_gor[i][1], 180, 40))
+                for n, v in enumerate(self.circles_segments[str(self.ways_coords_gor[i])]):
+                    x, y = v[0], v[1]
+                    pygame.draw.circle(screen, (255, 255, 255), (x, y), 20, width=13)
+                    if len(self.map_graph[self.ways_coords_gor[i][2]].segments[n]) > 5:
+                        text = font.render("+", True, '#FFFFFF')
+                        text1 = font.render(f"{len(self.map_graph[self.ways_coords_gor[i][2]].segments[n]) - 5}",
+                                            True, '#FFFFFF')
+                        text_x = x - text.get_width() // 2
+                        text_y = y + 10 + text.get_height() // 2
+                        text_x1 = x - text1.get_width() // 2
+                        text_y1 = y + 10 + text1.get_height() // 2 + text.get_height()
+                        screen.blit(text, (text_x, text_y))
+                        screen.blit(text1, (text_x1, text_y1))
+            if i < len(self.ways_coords_ver):
+                pygame.draw.rect(screen, '#FFC90D', (self.ways_coords_ver[i][0], self.ways_coords_ver[i][1], 40, 180))
+                for n, v in enumerate(self.circles_segments[str(self.ways_coords_ver[i])]):
+                    x, y = v[0], v[1]
+                    pygame.draw.circle(screen, (255, 255, 255), (x, y), 20, width=13)
+                    if len(self.map_graph[self.ways_coords_ver[i][2]].segments[n]) > 5:
+                        text = font.render(f"+ {len(self.map_graph[self.ways_coords_ver[i][2]].segments[n]) - 5}",
+                                           True, '#FFFFFF')
+                        text_x = x + 10 + text.get_width() // 2
+                        text_y = y - text.get_height() // 2
+                        screen.blit(text, (text_x, text_y))
+        all_sprites.draw(screen)
+        time.sleep(self.clock)
+        pygame.display.flip()
+
     def process_player(self, client, enemy, screen):
-        self.process_beginning_move(client)
+        self.process_beginning_move(client, screen)
         self.requests['requests'] = []
         self.requests['bot'] = None
         p = multiprocessing.Process(target=self.get_client_requests, args=(client, enemy, self.requests))
@@ -183,84 +257,13 @@ class Server:
                 print(req)
                 print(self.process_request(client, enemy, req))
 
-                all_sprites = pygame.sprite.Group()
-                image = None
-                player = None
-                for i in self.num_roads.keys():
-                    for j in range(len(self.map_graph[i].segments)):
-                        if self.map_graph[i].segments[j]:
-                            if self.units[self.map_graph[i].segments[j][0]].empire == 2:
-                                player = 'p2'
-                            else:
-                                player = 'p1'
-                        num_unist_on_segment = 5
-                        if len(self.map_graph[i].segments[j]) < 5:
-                            num_unist_on_segment = len(self.map_graph[i].segments[j])
-                        for v in range(num_unist_on_segment):
-                            sprite = pygame.sprite.Sprite()
-                            for key_img in self.sprites_levels.keys():
-                                if self.units[self.map_graph[i].segments[j][v]].defense >= key_img:
-                                    image = self.sprites_levels[key_img]
-                                    break
-                            sprite.image = self.load_image(player + '/' + image)
-                            sprite.rect = sprite.image.get_rect()
-                            sprite.rect.x = self.circles_segments[str(self.num_roads[i][0])][j][0] + self.xy[v][0]
-                            sprite.rect.y = self.circles_segments[str(self.num_roads[i][0])][j][1] + self.xy[v][1]
-                            all_sprites.add(sprite)
-                font = pygame.font.Font(None, 50)
-                text = font.render(f"{self.slowing_down}x", True, (255, 255, 255))
-                text_x = screen.get_width() // 2 - text.get_width() // 2
-                text_y = 490 - text.get_height() // 2
-                screen.blit(text, (text_x, text_y))
-                for i in range(len(self.castels)):
-                    if self.map_graph[f't{i}'].empire == 1:
-                        self.castels[i][2] = '#ED1B24'
-                    elif self.map_graph[f't{i}'].empire == 2:
-                        self.castels[i][2] = '#3F47CC'
-                    else:
-                        self.castels[i][2] = '#EFE3AF'
-                    pygame.draw.rect(screen, self.castels[i][2],
-                                     (self.castels[i][0], self.castels[i][1], 100, 100))
-                    font = pygame.font.Font(None, 32)
-                    text = font.render(f"{len(self.map_graph[f't{i}'].units)}", True, '#EFE3AF')
-                    text_x = self.castels[i][0] + text.get_width() // 2
-                    text_y = self.castels[i][1] + text.get_height() // 2
-                    screen.blit(text, (text_x, text_y))
-                    if i < len(self.ways_coords_gor):
-                        pygame.draw.rect(screen, '#FFC90D', (self.ways_coords_gor[i][0], self.ways_coords_gor[i][1], 180, 40))
-                        for n, v in enumerate(self.circles_segments[str(self.ways_coords_gor[i])]):
-                            x, y = v[0], v[1]
-                            pygame.draw.circle(screen, (255, 255, 255), (x, y), 20, width=13)
-                            if len(self.map_graph[self.ways_coords_gor[i][2]].segments[n]) > 5:
-                                text = font.render("+", True, '#FFFFFF')
-                                text1 = font.render(f"{len(self.map_graph[self.ways_coords_gor[i][2]].segments[n]) - 5}",
-                                                    True, '#FFFFFF')
-                                text_x = x - text.get_width() // 2
-                                text_y = y + 10 + text.get_height() // 2
-                                text_x1 = x - text1.get_width() // 2
-                                text_y1 = y + 10 + text1.get_height() // 2 + text.get_height()
-                                screen.blit(text, (text_x, text_y))
-                                screen.blit(text1, (text_x1, text_y1))
-                    if i < len(self.ways_coords_ver):
-                        pygame.draw.rect(screen, '#FFC90D', (self.ways_coords_ver[i][0], self.ways_coords_ver[i][1], 40, 180))
-                        for n, v in enumerate(self.circles_segments[str(self.ways_coords_ver[i])]):
-                            x, y = v[0], v[1]
-                            pygame.draw.circle(screen, (255, 255, 255), (x, y), 20, width=13)
-                            if len(self.map_graph[self.ways_coords_ver[i][2]].segments[n]) > 5:
-                                text = font.render(f"+ {len(self.map_graph[self.ways_coords_ver[i][2]].segments[n]) - 5}",
-                                                   True, '#FFFFFF')
-                                text_x = x + 10 + text.get_width() // 2
-                                text_y = y - text.get_height() // 2
-                                screen.blit(text, (text_x, text_y))
-                all_sprites.draw(screen)
-                time.sleep(self.clock)
-                pygame.display.flip()
+                self.draw(screen)
 
                 time.sleep(self.delay)
         else:
             print(client.bot.name, 'error: wrong output')
 
-    def process_beginning_move(self, client):
+    def process_beginning_move(self, client, screen):
         for town in self.map_graph.keys():
             if town[0] == 't':
                 if town in client.towns:
@@ -282,6 +285,7 @@ class Server:
         for unit in fixed_queue:
             self.move(unit)
         print('--------------------------')
+        self.draw(screen)
         time.sleep(self.delay)
 
     def get_client_requests(self, client, enemy, return_val):
@@ -291,7 +295,6 @@ class Server:
             return_val['bot'] = client.bot
         except Exception as what:
             print(client.bot.name, 'error:', what)
-
 
     def process_request(self, client, enemy, request):
         if type(request) == tuple and len(request) > 1:
