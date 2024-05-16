@@ -1,42 +1,7 @@
-import time
-
-
 class Example:
-    def __init__(self, map_graph):
+    def __init__(self, map_graph: dict):
         self.map_graph = map_graph
         self.name = 'Player'
 
-    def move(self, client_towns: list, enemy_towns: list, client_units: list, enemy_units: list):
+    def move(self, client_towns: dict, enemy_towns: dict, client_units: dict, enemy_units: dict):
         return []
-
-
-'''
-команды:
-    'upgrade', {town}  - улучшить город. town - имя города
-    'equip', {town}, {name} - экипировать воина. town - имя города. name - необязательный параметр. Можно выбрать имя для юнита
-    'move', {unit}, {road} - отправить юнита по одному из направлений. unit - имя юнита. road - имя дороги
-    'capture', {unit} - Захватить город. unit - имя юнита, находящегося во вражеском городе
-    'increase', {unit}, {characteristic}, {coins}  - Улучшить одну из характеристик юнита. unit - имя юнита.
-        characteristic - одна из характеристик юнита ('atk', 'def', 'max_hp', 'heal'). coins - количество затрачиваемых монет.
-коды состояний:
-    1  # upgrade ok
-    2  # equip ok
-    3  # move ok
-    4  # capture ok
-    5  # increase ok
-    100  # неизвестная команда
-    101 # выбрана не принадлежащий игроку город
-    102  # недостаточно средств
-    103  # недостаточно места в городе
-    104  # в городе захватчики
-    105  # выбран не принадлежащий игроку юнит
-    106 # юнит уже сделал ход/ только появился
-    107  # из города, в котором находится юнит, нельзя пойти в данном направлении
-    108  # юнит находится не в городе 
-    109  # юнит находится в дружественном городе
-    110  # юнит находится во вражеском городе
-    111  # Указано неправильное денежное значение
-    112  # выбрана неправильная характеристика
-    113  # юнит с таким именем уже существует
-'''
-

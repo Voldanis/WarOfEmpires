@@ -1,5 +1,5 @@
 class Unit:
-    def __init__(self, name, empire, location):
+    def __init__(self, name: str, empire: int, location: str):
         self.name = name
         self.empire = empire
         self.location = location
