@@ -8,6 +8,7 @@ class Boss(Example):
 
     def __init__(self, map_graph):
         super().__init__(map_graph)
+        self.turn = 0
         self.map_graph = map_graph
         self.name = 'SpamBoss'
         self.enemy_units = None
@@ -16,7 +17,6 @@ class Boss(Example):
         self.player_towns = None
         self.saveTowmsName = []
         self.upTownUnit = []
-        self.turn = 0
 
     def move(self, client_towns: list, enemy_towns: list, client_units: list, enemy_units: list):
         self.player_towns = client_towns
@@ -52,9 +52,6 @@ class Boss(Example):
                 for t in client_towns:
                     if u.location == t.name:
                         flag = False
-                        road = self.optimalRoad(t)
-                        al.append(('move', u.name, road))
-                        u.location = road
                         break
                 if flag:
                     rez.append(('capture', u.name))
@@ -65,25 +62,41 @@ class Boss(Example):
 
         for t in client_towns:
             colUnit = self.colMyUnitInTown(t)
-            logging.warning(colUnit)
             db = 1
+            isSave = True
             if t.name in self.saveTowmsName:
-                if oz >= 5:
+                isSave = False
+                if oz >= 10:
                     db = 1
-                else:
+                elif oz >= 0:
                     db = 0
+                else:
+                    db = -1
 
             if colUnit >= t.level + 1:
                 if oz > 0:
                     rez += self.upUnitsInTown(t, t.level + db)
+                for nameU in t.units:
+                    road = self.optimalRoad(t)
+                    rez.append(('move', nameU, road))
             else:
+                budget = t.level + db
                 a = t.level + 1 - colUnit
-                if a < (t.level + db) // 2:
-                    rez += self.upUnitsInTown(t, a-(t.level + db) // 2 * 2)
-                for _ in range(min((t.level + db) // 2, t.level + 1 - colUnit)):
+                if a <= (t.level + db) // 2:
+                    rez += self.upUnitsInTown(t, a - (t.level + db) // 2 * 2)
+                    budget -= a - (t.level + db) // 2 * 2
+
+                if self.turn >= 35:
+                    rez += self.upUnitsInTown(t, budget // 2 + budget % 2)
+                    budget -= budget // 2 + budget % 2
+
+                for nameU in t.units:
+                    road = self.optimalRoad(t)
+                    rez.append(('move', nameU, road))
+
+                for _ in range(budget):
                     rez.append(('equip', t.name))
 
-        rez += al
         for t in client_towns:
             rez.append(('upgrade', t.name))
         return rez
@@ -224,6 +237,12 @@ class Boss(Example):
     def upUnitsInTown(self, town, budget):
         rez = []
         units = self.getUnitsIsUnitsName(town.units)
+
+        for unit in units:
+            if budget > 0:
+                if unit.atk == 0:
+                    budget -= 1
+                    rez.append(('increase', unit.name, 'atk', 1))
         while budget > 0:
             flag = True
             for unit in units:
