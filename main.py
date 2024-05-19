@@ -186,9 +186,9 @@ class Server:
             for req in self.requests['requests']:
                 print(req)
                 print(self.process_request(client, enemy, req))
-                self.draw(screen)
         else:
             print(client.bot.name, 'error: wrong output')
+        self.draw(screen)
         print('--------------------------')
 
     def make_sprite(self, path, indexes, all_sprites):
