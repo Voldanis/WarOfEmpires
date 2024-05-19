@@ -20,7 +20,7 @@ class Server:
         self.requests = manager.dict()
         self.requests['requests'] = []
         self.castels = [[120, 5, 'towns/lvl1_town.png'], [400, 5, 'towns/lvl1_town.png'],
-                        [680, 5, 'towns/lvl1_town.png'], [945, 35, 'p2/p2_castel.png'],
+                        [680, 5, 'towns/lvl1_town.png'], [945, 5, 'p2/p2_castel.png'],
                         [120, 285, 'towns/lvl1_town.png'], [400, 285, 'towns/lvl1_town.png'],
                         [680, 285, 'towns/lvl1_town.png'], [960, 285, 'towns/lvl1_town.png'],
                         [105, 580, 'p1/p1_castel.png'], [400, 564, 'towns/lvl1_town.png'],
@@ -53,8 +53,9 @@ class Server:
                                6: 'lvl6 (1).png', 7: 'lvl7 (1).png'}
         self.town_levels = {0: 'towns/lvl1_town.png', 1: 'towns/lvl2_town.png',
                             2: 'towns/var_towns3.png', 3: 'towns/lvl4_town.png'}
-        self.clock = 0
-        self.slowing_down = 0.5
+        self.clock = 0.2
+        self.speed_now = 2
+        self.speeds = {1: ("2x", 446), 2: ("1x", 490), 3: ("0.5x", 534)}
         self.xy = ((-18, -6), (-21, -18), (-9, -30), (3, -18), (-1, -6))
 
     def generate_map(self):
@@ -135,15 +136,25 @@ class Server:
                 if event.type == pygame.QUIT:
                     running = False
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    if 557 < event.pos[0] < 623 and 473 < event.pos[1] < 507:
-                        self.clock += 0.2
-                        self.slowing_down /= 2
+                    if 557 < event.pos[0] < 623 and 429 < event.pos[1] < 463:
+                        self.clock = 0.0
+                        self.speed_now = 1
+                    elif 557 < event.pos[0] < 623 and 473 < event.pos[1] < 507:
+                        self.clock = 0.2
+                        self.speed_now = 2
+                    elif 557 < event.pos[0] < 623 and 517 < event.pos[1] < 551:
+                        self.clock = 0.4
+                        self.speed_now = 3
                     font = pygame.font.Font(None, 50)
-                    text = font.render(f"{self.slowing_down}x", True, (255, 255, 255))
-                    text_x = screen.get_width() // 2 - text.get_width() // 2
-                    text_y = 490 - text.get_height() // 2
-                    pygame.draw.rect(screen, '#B5E51D', (text_x, text_y, text.get_width(), text.get_height()))
-                    screen.blit(text, (text_x, text_y))
+                    for i in self.speeds.keys():
+                        if i == self.speed_now:
+                            text = font.render(self.speeds[i][0], True, (255, 0, 0))
+                        else:
+                            text = font.render(self.speeds[i][0], True, '#EFE3AF')
+                        text_x = screen.get_width() // 2 - text.get_width() // 2
+                        text_y = self.speeds[i][1] - text.get_height() // 2
+                        screen.blit(text, (text_x, text_y))
+
                     pygame.display.flip()
             if self.p1.score < self.win_score and self.p2.score < self.win_score and self.day < 100:
                 screen.fill('#B5E51D')
@@ -207,23 +218,17 @@ class Server:
         player = None
 
         font = pygame.font.Font(None, 50)
-        text = font.render(f"{self.slowing_down}x", True, (255, 255, 255))
-        text_x = screen.get_width() // 2 - text.get_width() // 2
-        text_y = 490 - text.get_height() // 2
-        screen.blit(text, (text_x, text_y))
         for i in range(len(self.castels)):
             if self.map_graph[f't{i}'].empire == 1:
                 if self.castels[i][2] not in ['p1/p1_castel.png', 'p2/p2_castel.png']:
                     for j in self.town_levels.keys():
                         if self.map_graph[f't{i}'].level >= j:
                             self.castels[i][2] = self.town_levels[j]
-                # pass
             elif self.map_graph[f't{i}'].empire == 2:
                 if self.castels[i][2] not in ['p1/p1_castel.png', 'p2/p2_castel.png']:
                     for j in self.town_levels.keys():
                         if self.map_graph[f't{i}'].level >= j:
                             self.castels[i][2] = self.town_levels[j]
-                # pass
             else:
                 self.castels[i][2] = 'towns/lvl1_town.png'
             if i < len(self.ways_coords_gor):
@@ -232,11 +237,11 @@ class Server:
                                      all_sprites)
                 for n, v in enumerate(self.circles_segments[str(self.ways_coords_gor[i])]):
                     x, y = v[0], v[1]
-                    pygame.draw.circle(screen, (255, 255, 255), (x, y), 20, width=13)
+                    pygame.draw.circle(screen, (0, 128, 0), (x, y), 20, width=13)
                     if len(self.map_graph[self.ways_coords_gor[i][2]].segments[n]) > 5:
-                        text = font.render("+", True, '#FFFFFF')
+                        text = font.render("+", True, '#EFE3AF')
                         text1 = font.render(f"{len(self.map_graph[self.ways_coords_gor[i][2]].segments[n]) - 5}",
-                                            True, '#FFFFFF')
+                                            True, '#EFE3AF')
                         text_x = x - text.get_width() // 2
                         text_y = y + 10 + text.get_height() // 2
                         text_x1 = x - text1.get_width() // 2
@@ -248,19 +253,14 @@ class Server:
                     self.make_sprite('road_ver.png', (self.ways_coords_ver[i][0], self.ways_coords_ver[i][1] - 20), all_sprites)
                 for n, v in enumerate(self.circles_segments[str(self.ways_coords_ver[i])]):
                     x, y = v[0], v[1]
-                    pygame.draw.circle(screen, (255, 255, 255), (x, y), 20, width=13)
+                    # self.make_sprite('segment.png', (x - 20, y - 20), all_sprites)
                     if len(self.map_graph[self.ways_coords_ver[i][2]].segments[n]) > 5:
                         text = font.render(f"+ {len(self.map_graph[self.ways_coords_ver[i][2]].segments[n]) - 5}",
-                                           True, '#FFFFFF')
+                                           True, '#EFE3AF')
                         text_x = x + 10 + text.get_width() // 2
                         text_y = y - text.get_height() // 2
                         screen.blit(text, (text_x, text_y))
             self.make_sprite(self.castels[i][2], (self.castels[i][0], self.castels[i][1]), all_sprites)
-            font = pygame.font.Font(None, 32)
-            text = font.render(f"{len(self.map_graph[f't{i}'].units)}", True, '#EFE3AF')
-            text_x = self.castels[i][0] + text.get_width() // 2
-            text_y = self.castels[i][1] + text.get_height() // 2
-            screen.blit(text, (text_x, text_y))
         for i in self.num_roads.keys():
             for j in range(len(self.map_graph[i].segments)):
                 if self.map_graph[i].segments[j]:
@@ -280,6 +280,29 @@ class Server:
                     y = self.circles_segments[str(self.num_roads[i][0])][j][1] + self.xy[v][1]
                     self.make_sprite(player + '/' + image, (x, y), all_sprites)
         all_sprites.draw(screen)
+        for i in range(len(self.castels)):
+            font1 = pygame.font.Font(None, 32)
+            text = font1.render(f"{len(self.map_graph[f't{i}'].units)}", True, '#EFE3AF')
+            text1 = font1.render(f"{self.map_graph[f't{i}'].level}", True, '#EFE3AF')
+            text_x = self.castels[i][0] + text.get_width() // 2
+            text_y = self.castels[i][1] + text.get_height() // 2
+            text1_x = self.castels[i][0] + 70 + text1.get_width() // 2
+            text1_y = self.castels[i][1] + text1.get_height() // 2
+            if self.castels[i][2] == 'p2/p2_castel.png':
+                text_x += 20
+                text_y += 10
+                text1_x += 45
+                text1_y += 10
+            screen.blit(text, (text_x, text_y))
+            screen.blit(text1, (text1_x, text1_y))
+        for i in self.speeds.keys():
+            if i == self.speed_now:
+                text = font.render(self.speeds[i][0], True, (255, 0, 0))
+            else:
+                text = font.render(self.speeds[i][0], True, '#EFE3AF')
+            text_x = screen.get_width() // 2 - text.get_width() // 2
+            text_y = self.speeds[i][1] - text.get_height() // 2
+            screen.blit(text, (text_x, text_y))
         time.sleep(self.clock)
         pygame.display.flip()
 
