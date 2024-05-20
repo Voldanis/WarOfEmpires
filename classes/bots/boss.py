@@ -7,8 +7,8 @@ class Boss(Example):
     def __init__(self, map_graph):
         super().__init__(map_graph)
         self.turn = 0
-        self.map_graph = map_graph
-        self.name = [] #'SpamBoss'
+        self.map_graph = self.pre_treatmentMap_graph(map_graph)
+        self.name = 'SpamBoss'
         self.enemy_units = None
         self.enemy_towns = None
         self.player_units = None
@@ -16,11 +16,33 @@ class Boss(Example):
         self.saveTowmsName = []
         self.upTownUnit = []
 
-    def move(self, client_towns: list, enemy_towns: list, client_units: list, enemy_units: list):
-        self.player_towns = client_towns
-        self.player_units = client_units
-        self.enemy_towns = enemy_towns
-        self.enemy_units = enemy_units
+    def pre_treatmentMap_graph(self, inp):
+        mp={}
+        for k in inp:
+            if k[0]=='t':
+                mp[k]=inp[k]
+            else:
+                mp[k]={'length':inp[k].length,'start_town':inp[k].start_town, 'finish_town': inp[k].finish_town}
+        return mp
+
+    def pre_treatmentMove(self, inp):
+        rez=[]
+        for i in inp:
+            rez.append(inp[i])
+        return rez
+
+
+    def move(self, client_towns: dict, enemy_towns: dict, client_units: dict, enemy_units: dict):
+        self.player_towns = self.pre_treatmentMove(client_towns)
+        self.player_units = self.pre_treatmentMove(client_units)
+        self.enemy_towns = self.pre_treatmentMove(enemy_towns)
+        self.enemy_units = self.pre_treatmentMove(enemy_units)
+
+        client_towns = self.pre_treatmentMove(client_towns)
+        client_units = self.pre_treatmentMove(client_units)
+        enemy_towns = self.pre_treatmentMove(enemy_towns)
+        enemy_units = self.pre_treatmentMove(enemy_units)
+
         self.saveTowmsName = []
         self.turn += 1
 
