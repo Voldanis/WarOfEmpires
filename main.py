@@ -168,14 +168,27 @@ class Server:
                         winner = self.p1.bot.name + ' wins!'
                     else:
                         winner = 'draw!'
-                    print(self.p1.bot.name, 'score:', self.p1.score)
-                    print(self.p2.bot.name, 'score:', self.p2.score)
+                    score1 = self.p1.bot.name + ' score: ' + str(self.p1.score)
+                    score2 = self.p2.bot.name + ' score: ' + str(self.p2.score)
                     flag = False
-                self.draw_end(screen, winner)
+                self.draw_end(screen, winner, score1, score2)
         pygame.quit()
 
-    def draw_end(self, screen, winner):
-        pygame.draw.rect(screen, (0, 0, 0), (40, 40, 40, 40))
+    def draw_end(self, screen, winner, score1, score2):
+        pygame.draw.rect(screen, (0, 0, 0), (295, 177, 590, 354))
+        font = pygame.font.Font(None, 50)
+        text = font.render(f"{winner}", True, '#FFFFFF')
+        text_x = screen.get_width() // 2 - text.get_width() // 2
+        text_y = screen.get_height() // 2 - 34 - text.get_height() // 2
+        text1 = font.render(f"{score1}", True, '#FFFFFF')
+        text1_x = screen.get_width() // 2 - text1.get_width() // 2
+        text1_y = screen.get_height() // 2 - text1.get_height() // 2
+        text2 = font.render(f"{score2}", True, '#FFFFFF')
+        text2_x = screen.get_width() // 2 - text2.get_width() // 2
+        text2_y = screen.get_height() // 2 + 34 - text2.get_height() // 2
+        screen.blit(text, (text_x, text_y))
+        screen.blit(text1, (text1_x, text1_y))
+        screen.blit(text2, (text2_x, text2_y))
         pygame.display.flip()
 
     def make_sprite(self, path, indexes, all_sprites):
