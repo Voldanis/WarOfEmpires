@@ -163,45 +163,20 @@ class Server:
             else:
                 if flag == True:
                     if self.p1.score > self.p2.score:
-                        print(self.p1.bot.name, 'wins!')
+                        winner = self.p1.bot.name + ' wins!'
                     elif self.p1.score < self.p2.score:
-                        print(self.p2.bot.name, 'wins!')
+                        winner = self.p1.bot.name + ' wins!'
                     else:
-                        print('draw!')
+                        winner = 'draw!'
                     print(self.p1.bot.name, 'score:', self.p1.score)
                     print(self.p2.bot.name, 'score:', self.p2.score)
                     flag = False
+                self.draw_end(screen, winner)
         pygame.quit()
 
-    def bot_processing(self, screen):
-        print('day', self.day)
-        self.process_player(self.p1, self.p2, screen)
-        self.process_player(self.p2, self.p1, screen)
-        self.day += 1
-        self.p1.count_points(self.map_graph)
-        self.p2.count_points(self.map_graph)
-
-    def process_player(self, client: Player, enemy: Player, screen):
-        print('--------------------------')
-        self.process_beginning_move(client)
-        self.requests['requests'] = []
-        self.requests['bot'] = None
-        p = multiprocessing.Process(target=self.get_client_requests, args=(client, enemy, self.requests))
-        p.start()
-        p.join()  # 0.16 -> 0.1 задержка
-        if p.is_alive():
-            p.terminate()
-            print(client.bot.name + ' is too slow')
-        if not (self.requests['bot'] is None):
-            client.bot = self.requests['bot']
-        if type(self.requests['requests']) == list:
-            for req in self.requests['requests']:
-                print(req)
-                print(self.process_request(client, enemy, req))
-        else:
-            print(client.bot.name, 'error: wrong output')
-        self.draw(screen)
-        print('--------------------------')
+    def draw_end(self, screen, winner):
+        pygame.draw.rect(screen, (0, 0, 0), (40, 40, 40, 40))
+        pygame.display.flip()
 
     def make_sprite(self, path, indexes, all_sprites):
         sprite = pygame.sprite.Sprite()
@@ -315,7 +290,36 @@ class Server:
         time.sleep(self.clock)
         pygame.display.flip()
 
-    def process_beginning_move(self, client: Player):
+    def bot_processing(self, screen):
+        print('day', self.day)
+        self.process_player(self.p1, self.p2, screen)
+        self.process_player(self.p2, self.p1, screen)
+        self.day += 1
+        self.p1.count_points(self.map_graph)
+        self.p2.count_points(self.map_graph)
+
+    def process_player(self, client: Player, enemy: Player, screen):
+        print('--------------------------')
+        self.process_beginning_move(client, screen)
+        self.requests['requests'] = []
+        self.requests['bot'] = None
+        p = multiprocessing.Process(target=self.get_client_requests, args=(client, enemy, self.requests))
+        p.start()
+        p.join()  # 0.16 -> 0.1 задержка
+        if p.is_alive():
+            p.terminate()
+            print(client.bot.name + ' is too slow')
+        if not (self.requests['bot'] is None):
+            client.bot = self.requests['bot']
+        if type(self.requests['requests']) == list:
+            for req in self.requests['requests']:
+                print(req)
+                print(self.process_request(client, enemy, req, screen))
+        else:
+            print(client.bot.name, 'error: wrong output')
+        print('--------------------------')
+
+    def process_beginning_move(self, client: Player, screen):
         for town in self.map_graph.keys():
             if town[0] == 't':
                 if town in client.towns:
@@ -336,8 +340,9 @@ class Server:
         fixed_queue = client.units_queue.copy()
         for unit in fixed_queue:
             self.move(unit)
+            self.draw(screen)
         print('--------------------------')
-        # self.draw(screen)
+        self.draw(screen)
         time.sleep(self.delay)
 
     def get_client_requests(self, client: Player, enemy: Player, return_val):
@@ -348,7 +353,7 @@ class Server:
         except Exception as what:
             print(client.bot.name, 'error:', what)
 
-    def process_request(self, client: Player, enemy: Player, request):
+    def process_request(self, client: Player, enemy: Player, request, screen):
         if type(request) == tuple and len(request) > 1:
             if request[0] == 'upgrade':
                 if request[1] in client.towns:
@@ -357,6 +362,7 @@ class Server:
                         if self.map_graph[request[1]].coins >= round((self.map_graph[request[1]].level + 1)
                                                                      * ((5 + self.map_graph[request[1]].level) / 3)):
                             self.map_graph[request[1]].upgrade()
+                            self.draw(screen)
                             return StatusCodes.upgrade_ok
                         else:
                             return StatusCodes.no_money
