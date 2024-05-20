@@ -48,12 +48,12 @@ class Server:
                           'r15': [self.ways_coords_gor[7], 't9', 't10', True],
                           'r16': [self.ways_coords_gor[8], 't10', 't11', True]}
         self.circles_segments = {}
-        self.sprites_levels = {0: 'lvl0 (1).png', 10: 'lvl1 (1).png', 20: 'lvl2 (1).png',
-                               30: 'lvl3 (1).png', 40: 'lvl4 (1).png', 50: 'lvl5 (1).png',
-                               6: 'lvl6 (1).png', 7: 'lvl7 (1).png'}
-        self.town_levels = {0: 'towns/lvl1_town.png', 10: 'towns/lvl2_town.png',
-                            20: 'towns/lvl3_town.png', 30: 'towns/lvl4_town.png',
-                            40: 'towns/lvl5_town.png', 50: 'towns/lvl6_town.png'}
+        self.sprites_levels = {0: 'lvl0 (1).png', 2: 'lvl1 (1).png', 4: 'lvl2 (1).png',
+                               6: 'lvl3 (1).png', 8: 'lvl4 (1).png', 10: 'lvl5 (1).png'}
+                               # 12: '', 14: ''}
+        self.town_levels = {1: 'towns/lvl1_town.png', 3: 'towns/lvl2_town.png',
+                            5: 'towns/lvl3_town.png', 7: 'towns/lvl5_town.png',
+                            9: 'towns/lvl6_town.png'}
         self.clock = 0.2
         self.speed_now = 2
         self.speeds = {1: ("2x", 446), 2: ("1x", 490), 3: ("0.5x", 534)}
@@ -279,12 +279,20 @@ class Server:
                             break
                     x = self.circles_segments[str(self.num_roads[i][0])][j][0] + self.xy[v][0]
                     y = self.circles_segments[str(self.num_roads[i][0])][j][1] + self.xy[v][1]
-                    self.make_sprite(player + '/' + image, (x, y), all_sprites)
+                    if self.num_roads[i][0] in self.ways_coords_gor:
+                        self.make_sprite(player + '/' + image, (x + 20, y), all_sprites)
+                    else:
+                        self.make_sprite(player + '/' + image, (x, y), all_sprites)
         all_sprites.draw(screen)
         for i in range(len(self.castels)):
+            color = (239, 227, 175)
+            if self.map_graph[f't{i}'].empire == 1:
+                color = (66, 170, 255)
+            elif self.map_graph[f't{i}'].empire == 2:
+                color = (255, 51, 51)
             font1 = pygame.font.Font(None, 32)
-            text = font1.render(f"{len(self.map_graph[f't{i}'].units)}", True, '#EFE3AF')
-            text1 = font1.render(f"{self.map_graph[f't{i}'].level}", True, '#EFE3AF')
+            text = font1.render(f"{len(self.map_graph[f't{i}'].units)}", True, color)
+            text1 = font1.render(f"{self.map_graph[f't{i}'].level}", True, color)
             text_x = self.castels[i][0] + text.get_width() // 2
             text_y = self.castels[i][1] + text.get_height() // 2
             text1_x = self.castels[i][0] + 70 + text1.get_width() // 2
