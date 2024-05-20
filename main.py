@@ -3,6 +3,7 @@ from classes.reports.town_data import TownData
 from classes.reports.unit_data import UnitData
 from classes.standart.status_codes import StatusCodes
 
+
 class Server:
     def __init__(self):
         self.width = 4
@@ -50,12 +51,13 @@ class Server:
         self.circles_segments = {}
         self.sprites_levels = {0: 'lvl0 (1).png', 2: 'lvl1 (1).png', 4: 'lvl2 (1).png',
                                6: 'lvl3 (1).png', 8: 'lvl4 (1).png', 10: 'lvl5 (1).png'}
-                               # 12: '', 14: ''}
+        # 12: '', 14: ''}
         self.town_levels = {1: 'towns/lvl1_town.png', 3: 'towns/lvl2_town.png',
-                            5: 'towns/lvl3_town.png', 7: 'towns/lvl5_town.png',
-                            9: 'towns/lvl6_town.png'}
+                            5: 'towns/lvl3_town.png', 7: 'towns/lvl4_town.png',
+                            9: 'towns/lvl5_town.png'}
         self.clock = 0.2
         self.speed_now = 2
+        self.running = True
         self.speeds = {1: ("2x", 446), 2: ("1x", 490), 3: ("0.5x", 534)}
         self.xy = ((-18, -6), (-21, -18), (-9, -30), (3, -18), (-1, -6))
 
@@ -130,33 +132,8 @@ class Server:
                     circles.append((x, self.num_roads[i][0][1] + (j + 1) * segment - segment // 2))
             self.circles_segments[str(self.num_roads[i][0])] = circles
         screen = pygame.display.set_mode((1180, 708))
-        running = True
         flag = True
-        while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if 557 < event.pos[0] < 623 and 429 < event.pos[1] < 463:
-                        self.clock = 0.0
-                        self.speed_now = 1
-                    elif 557 < event.pos[0] < 623 and 473 < event.pos[1] < 507:
-                        self.clock = 0.2
-                        self.speed_now = 2
-                    elif 557 < event.pos[0] < 623 and 517 < event.pos[1] < 551:
-                        self.clock = 0.4
-                        self.speed_now = 3
-                    font = pygame.font.Font(None, 50)
-                    for i in self.speeds.keys():
-                        if i == self.speed_now:
-                            text = font.render(self.speeds[i][0], True, (255, 0, 0))
-                        else:
-                            text = font.render(self.speeds[i][0], True, '#EFE3AF')
-                        text_x = screen.get_width() // 2 - text.get_width() // 2
-                        text_y = self.speeds[i][1] - text.get_height() // 2
-                        screen.blit(text, (text_x, text_y))
-
-                    pygame.display.flip()
+        while self.running:
             if self.p1.score < self.win_score and self.p2.score < self.win_score and self.day < 100:
                 screen.fill('#B5E51D')
                 self.bot_processing(screen)
@@ -201,12 +178,14 @@ class Server:
 
     def draw(self, screen):
         screen.fill('#B5E51D')
-        all_sprites = pygame.sprite.Group()
-        self.make_sprite('pole.png', (0, 0), all_sprites)
+        pole = pygame.sprite.Group()
+        self.make_sprite('textures/pole.png', (0, 0), pole)
+        pole.draw(screen)
         image = None
         player = None
-
-        font = pygame.font.Font(None, 50)
+        all_sprites = pygame.sprite.Group()
+        font = pygame.font.Font(None, 40)
+        font1 = pygame.font.Font(None, 50)
         for i in range(len(self.castels)):
             if self.map_graph[f't{i}'].empire == 1:
                 if self.castels[i][2] not in ['p1/p1_castel.png', 'p2/p2_castel.png']:
@@ -222,27 +201,30 @@ class Server:
                 self.castels[i][2] = 'towns/lvl1_town.png'
             if i < len(self.ways_coords_gor):
                 if i % 3 == 0:
-                    self.make_sprite('road_gor.png', (self.ways_coords_gor[i][0] - 15, self.ways_coords_gor[i][1]),
+                    self.make_sprite('textures/road_gor.png',
+                                     (self.ways_coords_gor[i][0] - 15, self.ways_coords_gor[i][1]),
                                      all_sprites)
                 for n, v in enumerate(self.circles_segments[str(self.ways_coords_gor[i])]):
                     x, y = v[0], v[1]
-                    self.make_sprite('segment2.png', (x, y - 20), all_sprites)
+                    self.make_sprite('textures/segment2.png', (x, y - 20), all_sprites)
                     if len(self.map_graph[self.ways_coords_gor[i][2]].segments[n]) > 5:
                         text = font.render("+", True, '#EFE3AF')
                         text1 = font.render(f"{len(self.map_graph[self.ways_coords_gor[i][2]].segments[n]) - 5}",
                                             True, '#EFE3AF')
-                        text_x = x - text.get_width() // 2
+                        text_x = x - text.get_width() // 2 + 20
                         text_y = y + 10 + text.get_height() // 2
-                        text_x1 = x - text1.get_width() // 2
+                        text_x1 = x - text1.get_width() // 2 + 20
                         text_y1 = y + 10 + text1.get_height() // 2 + text.get_height()
                         screen.blit(text, (text_x, text_y))
                         screen.blit(text1, (text_x1, text_y1))
             if i < len(self.ways_coords_ver):
                 if i < 4:
-                    self.make_sprite('road_ver.png', (self.ways_coords_ver[i][0], self.ways_coords_ver[i][1] - 20), all_sprites)
+                    self.make_sprite('textures/road_ver.png',
+                                     (self.ways_coords_ver[i][0], self.ways_coords_ver[i][1] - 20),
+                                     all_sprites)
                 for n, v in enumerate(self.circles_segments[str(self.ways_coords_ver[i])]):
                     x, y = v[0], v[1]
-                    self.make_sprite('segment2.png', (x - 20, y - 20), all_sprites)
+                    self.make_sprite('textures/segment2.png', (x - 20, y - 20), all_sprites)
                     if len(self.map_graph[self.ways_coords_ver[i][2]].segments[n]) > 5:
                         text = font.render(f"+ {len(self.map_graph[self.ways_coords_ver[i][2]].segments[n]) - 5}",
                                            True, '#EFE3AF')
@@ -278,9 +260,9 @@ class Server:
                 color = (66, 170, 255)
             elif self.map_graph[f't{i}'].empire == 2:
                 color = (255, 51, 51)
-            font1 = pygame.font.Font(None, 32)
-            text = font1.render(f"{len(self.map_graph[f't{i}'].units)}", True, color)
-            text1 = font1.render(f"{self.map_graph[f't{i}'].level}", True, color)
+            font2 = pygame.font.Font(None, 32)
+            text = font2.render(f"{len(self.map_graph[f't{i}'].units)}", True, color)
+            text1 = font2.render(f"{self.map_graph[f't{i}'].level}", True, color)
             text_x = self.castels[i][0] + text.get_width() // 2
             text_y = self.castels[i][1] + text.get_height() // 2
             text1_x = self.castels[i][0] + 70 + text1.get_width() // 2
@@ -294,14 +276,37 @@ class Server:
             screen.blit(text1, (text1_x, text1_y))
         for i in self.speeds.keys():
             if i == self.speed_now:
-                text = font.render(self.speeds[i][0], True, (255, 0, 0))
+                text = font1.render(self.speeds[i][0], True, (255, 0, 0))
             else:
-                text = font.render(self.speeds[i][0], True, '#EFE3AF')
+                text = font1.render(self.speeds[i][0], True, '#EFE3AF')
             text_x = screen.get_width() // 2 - text.get_width() // 2
             text_y = self.speeds[i][1] - text.get_height() // 2
             screen.blit(text, (text_x, text_y))
         time.sleep(self.clock)
         pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if 557 < event.pos[0] < 623 and 429 < event.pos[1] < 463:
+                    self.clock = 0.0
+                    self.speed_now = 1
+                elif 557 < event.pos[0] < 623 and 473 < event.pos[1] < 507:
+                    self.clock = 0.2
+                    self.speed_now = 2
+                elif 557 < event.pos[0] < 623 and 517 < event.pos[1] < 551:
+                    self.clock = 0.4
+                    self.speed_now = 3
+                font = pygame.font.Font(None, 50)
+                for i in self.speeds.keys():
+                    if i == self.speed_now:
+                        text = font.render(self.speeds[i][0], True, (255, 0, 0))
+                    else:
+                        text = font.render(self.speeds[i][0], True, '#EFE3AF')
+                    text_x = screen.get_width() // 2 - text.get_width() // 2
+                    text_y = self.speeds[i][1] - text.get_height() // 2
+                    screen.blit(text, (text_x, text_y))
+                pygame.display.flip()
 
     def bot_processing(self, screen):
         print('day', self.day)
@@ -371,7 +376,7 @@ class Server:
             if request[0] == 'upgrade':
                 if request[1] in client.towns:
                     if len(self.map_graph[request[1]].units) < 1 or self.units[
-                            self.map_graph[request[1]].units[0]].empire == self.map_graph[request[1]].empire:
+                        self.map_graph[request[1]].units[0]].empire == self.map_graph[request[1]].empire:
                         if self.map_graph[request[1]].coins >= round((self.map_graph[request[1]].level + 1)
                                                                      * ((5 + self.map_graph[request[1]].level) / 3)):
                             self.map_graph[request[1]].upgrade()
@@ -386,7 +391,7 @@ class Server:
             elif request[0] == 'equip':
                 if request[1] in client.towns:
                     if len(self.map_graph[request[1]].units) < 1 or self.units[
-                            self.map_graph[request[1]].units[0]].empire == self.map_graph[request[1]].empire:
+                        self.map_graph[request[1]].units[0]].empire == self.map_graph[request[1]].empire:
                         if self.map_graph[request[1]].coins >= 2:
                             if len(self.map_graph[request[1]].units) <= self.map_graph[request[1]].level:
                                 if len(request) == 2:
@@ -540,7 +545,7 @@ class Server:
 
     def exit_of_town(self, correct_road: str, direction: int, unit: str):
         if len(self.map_graph[correct_road].segments[direction]) > 0 and self.units[
-                self.map_graph[correct_road].segments[direction][0]].empire != self.units[unit].empire:
+            self.map_graph[correct_road].segments[direction][0]].empire != self.units[unit].empire:
             self.battle(unit, self.map_graph[correct_road].segments[direction][0])
         else:
             self.map_graph[self.units[unit].location].units.remove(unit)
@@ -549,10 +554,10 @@ class Server:
 
     def enter_town(self, pos: int, unit: str):
         if len(self.map_graph[self.units[unit].finish_town].units) > 0 and self.units[
-                self.map_graph[self.units[unit].finish_town].units[0]].empire != self.units[unit].empire:
+            self.map_graph[self.units[unit].finish_town].units[0]].empire != self.units[unit].empire:
             self.battle(unit, self.map_graph[self.units[unit].finish_town].units[0])
         elif len(self.map_graph[self.units[unit].finish_town].units) <= self.map_graph[
-                self.units[unit].finish_town].level:
+            self.units[unit].finish_town].level:
             self.map_graph[self.units[unit].location].segments[pos].remove(unit)
             self.map_graph[self.units[unit].finish_town].units.append(unit)
             self.units[unit].location = self.units[unit].finish_town
