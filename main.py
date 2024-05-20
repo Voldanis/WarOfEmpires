@@ -158,7 +158,7 @@ class Server:
                         screen.blit(text, (text_x, text_y))
 
                     pygame.display.flip()
-            if self.p1.score < self.win_score and self.p2.score < self.win_score and self.day < 10:
+            if self.p1.score < self.win_score and self.p2.score < self.win_score and self.day < 100:
                 screen.fill('#B5E51D')
                 self.bot_processing(screen)
             else:
@@ -348,7 +348,6 @@ class Server:
             return 'Player'
         else:
             return 'Boss'
-
 
     def process_request(self, client: Player, enemy: Player, request):
         if type(request) == tuple and len(request) > 1:
