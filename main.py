@@ -48,11 +48,12 @@ class Server:
                           'r15': [self.ways_coords_gor[7], 't9', 't10', True],
                           'r16': [self.ways_coords_gor[8], 't10', 't11', True]}
         self.circles_segments = {}
-        self.sprites_levels = {0: 'lvl0 (1).png', 1: 'lvl1 (1).png', 2: 'lvl2 (1).png',
-                               3: 'lvl3 (1).png', 4: 'lvl4 (1).png', 5: 'lvl5 (1).png',
+        self.sprites_levels = {0: 'lvl0 (1).png', 10: 'lvl1 (1).png', 20: 'lvl2 (1).png',
+                               30: 'lvl3 (1).png', 40: 'lvl4 (1).png', 50: 'lvl5 (1).png',
                                6: 'lvl6 (1).png', 7: 'lvl7 (1).png'}
-        self.town_levels = {0: 'towns/lvl1_town.png', 1: 'towns/lvl2_town.png',
-                            2: 'towns/var_towns3.png', 3: 'towns/lvl4_town.png'}
+        self.town_levels = {0: 'towns/lvl1_town.png', 10: 'towns/lvl2_town.png',
+                            20: 'towns/lvl3_town.png', 30: 'towns/lvl4_town.png',
+                            40: 'towns/lvl5_town.png', 50: 'towns/lvl6_town.png'}
         self.clock = 0.2
         self.speed_now = 2
         self.speeds = {1: ("2x", 446), 2: ("1x", 490), 3: ("0.5x", 534)}
@@ -237,7 +238,7 @@ class Server:
                                      all_sprites)
                 for n, v in enumerate(self.circles_segments[str(self.ways_coords_gor[i])]):
                     x, y = v[0], v[1]
-                    pygame.draw.circle(screen, (0, 128, 0), (x, y), 20, width=13)
+                    self.make_sprite('segment2.png', (x, y - 20), all_sprites)
                     if len(self.map_graph[self.ways_coords_gor[i][2]].segments[n]) > 5:
                         text = font.render("+", True, '#EFE3AF')
                         text1 = font.render(f"{len(self.map_graph[self.ways_coords_gor[i][2]].segments[n]) - 5}",
@@ -253,7 +254,7 @@ class Server:
                     self.make_sprite('road_ver.png', (self.ways_coords_ver[i][0], self.ways_coords_ver[i][1] - 20), all_sprites)
                 for n, v in enumerate(self.circles_segments[str(self.ways_coords_ver[i])]):
                     x, y = v[0], v[1]
-                    # self.make_sprite('segment.png', (x - 20, y - 20), all_sprites)
+                    self.make_sprite('segment2.png', (x - 20, y - 20), all_sprites)
                     if len(self.map_graph[self.ways_coords_ver[i][2]].segments[n]) > 5:
                         text = font.render(f"+ {len(self.map_graph[self.ways_coords_ver[i][2]].segments[n]) - 5}",
                                            True, '#EFE3AF')
