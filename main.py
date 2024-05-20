@@ -2,6 +2,7 @@ from classes.standart.player import Player
 from classes.reports.town_data import TownData
 from classes.reports.unit_data import UnitData
 from classes.standart.status_codes import StatusCodes
+from classes.bots.bot import Bot
 
 class Server:
     def __init__(self):
@@ -97,7 +98,7 @@ class Server:
         map_objects = dict()
         for i in self.map_graph.keys():
             if i[0] == 'r':
-                map_objects[i] = MPRoadData(self.map_graph[i])
+                map_objects[i] = MGRoadData(self.map_graph[i])
             else:
                 map_objects[i] = self.map_graph[i].roads
         if random.randint(0, 1) == 0:
@@ -129,6 +130,7 @@ class Server:
                     circles.append((x, self.num_roads[i][0][1] + (j + 1) * segment - segment // 2))
             self.circles_segments[str(self.num_roads[i][0])] = circles
         screen = pygame.display.set_mode((1180, 708))
+        pygame.display.set_caption('War of empires')
         running = True
         flag = True
         while running:
@@ -162,13 +164,13 @@ class Server:
             else:
                 if flag == True:
                     if self.p1.score > self.p2.score:
-                        print(self.p1.bot.name, 'wins!')
+                        print(self.check_bot_name(self.p1), 'wins!')
                     elif self.p1.score < self.p2.score:
-                        print(self.p2.bot.name, 'wins!')
+                        print(self.check_bot_name(self.p2), 'wins!')
                     else:
                         print('draw!')
-                    print(self.p1.bot.name, 'score:', self.p1.score)
-                    print(self.p2.bot.name, 'score:', self.p2.score)
+                    print(self.check_bot_name(self.p1), 'score:', self.p1.score)
+                    print(self.check_bot_name(self.p2), 'score:', self.p2.score)
                     flag = False
         pygame.quit()
 
@@ -190,7 +192,7 @@ class Server:
         p.join()  # 0.16 -> 0.1 задержка
         if p.is_alive():
             p.terminate()
-            print(client.bot.name + ' is too slow')
+            print(self.check_bot_name(client) + ' is too slow')
         if not (self.requests['bot'] is None):
             client.bot = self.requests['bot']
         if type(self.requests['requests']) == list:
@@ -198,7 +200,7 @@ class Server:
                 print(req)
                 print(self.process_request(client, enemy, req))
         else:
-            print(client.bot.name, 'error: wrong output')
+            print(self.check_bot_name(client), 'error: wrong output')
         self.draw(screen)
         print('--------------------------')
 
@@ -337,7 +339,15 @@ class Server:
             return_val['requests'] = client.bot.move(cv, ev, cu, eu)
             return_val['bot'] = client.bot
         except Exception as what:
-            print(client.bot.name, 'error:', what)
+            print(self.check_bot_name(client), 'error:', what)
+
+    def check_bot_name(self, client):
+        if type(client.bot.name) == str:
+            return client.bot.name
+        elif type(client.bot) == Bot:
+            return 'Player'
+        else:
+            return 'Boss'
 
     def process_request(self, client: Player, enemy: Player, request):
         if type(request) == tuple and len(request) > 1:
@@ -581,10 +591,9 @@ if __name__ == "__main__":
     import pygame
     import math
     from classes.bots.boss import Boss
-    from classes.bots.bot import Bot
     from classes.standart.town import Town
     from classes.standart.road import Road
-    from classes.reports.mp_road_data import MPRoadData
+    from classes.reports.mg_road_data import MGRoadData
 
     # random.seed(a=835995859)
     server = Server()
