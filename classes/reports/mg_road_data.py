@@ -1,4 +1,4 @@
-class MPRoadData:
+class MGRoadData:
     def __init__(self, road):
         self.length = road.length
         self.start_town = road.start_town
